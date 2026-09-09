@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #0e1b23;
+  color: #edf3f5;
+}
+
+/* tabular numerals throughout the stat table so digits align */
+.stat-num {
+  font-variant-numeric: tabular-nums;
+}
