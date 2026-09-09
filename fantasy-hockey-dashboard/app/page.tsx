@@ -114,7 +114,7 @@ export default function Dashboard() {
     <main className="min-h-screen px-4 py-8 md:px-10">
       <header className="mb-8 border-b border-rink-steel/40 pb-6">
         <h1 className="font-display text-3xl md:text-4xl tracking-tight text-rink-ice">
-          Fantasy Hockey Targets
+          Fantasy Hockey Dashboard
         </h1>
         <p className="mt-1 font-mono text-sm text-rink-ice/60">
           12-team head-to-head categories &middot; keeper &middot; ranked by value above replacement
