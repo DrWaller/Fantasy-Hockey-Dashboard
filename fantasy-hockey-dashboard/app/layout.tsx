@@ -15,7 +15,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fantasy Hockey Targets",
+  title: "Fantasy Hockey Dashboard",
   description: "Category-value targeting dashboard for a 12-team H2H keeper league",
 };
 
