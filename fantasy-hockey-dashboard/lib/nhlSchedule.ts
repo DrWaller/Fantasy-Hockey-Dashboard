@@ -44,6 +44,25 @@ async function fetchTeamSeasonSchedule(
 }
 
 /**
+ * Returns a team's most recently completed regular-season games, most
+ * recent first — used by the Zero-G goalie-starts feature to know which
+ * games to pull boxscores for.
+ */
+export async function getTeamRecentCompletedGames(
+  team: string,
+  season: string,
+  count: number
+): Promise<{ gameId: number; date: string }[]> {
+  const games = await fetchTeamSeasonSchedule(team, season);
+  const todayISO = new Date().toISOString().slice(0, 10);
+  return games
+    .filter((g) => g.gameType === 2 && gameDateOf(g) && gameDateOf(g) < todayISO)
+    .sort((a, b) => gameDateOf(b).localeCompare(gameDateOf(a)))
+    .slice(0, count)
+    .map((g) => ({ gameId: g.id, date: gameDateOf(g) }));
+}
+
+/**
  * Fetches every team's full-season schedule once, and returns:
  *  - gamesRemaining: regular-season games left per team from today forward
  *  - dailyGameCounts: total league-wide games per date (for a heavy/light

@@ -9,6 +9,7 @@ import {
   estimateGoalieReplacementLevel,
 } from "@/lib/scoring";
 import ScheduleView from "@/components/ScheduleView";
+import ZeroGView from "@/components/ZeroGView";
 
 type RawSkater = {
   playerId: number;
@@ -54,7 +55,7 @@ function zColor(z: number): string {
 }
 
 export default function Dashboard() {
-  const [tab, setTab] = useState<"skaters" | "goalies" | "schedule">("skaters");
+  const [tab, setTab] = useState<"skaters" | "goalies" | "schedule" | "zerog">("skaters");
   const [minGames, setMinGames] = useState(3);
   const [showOnly, setShowOnly] = useState<"all" | "targets">("targets");
   const [sortKey, setSortKey] = useState<string>("valueAboveReplacement");
@@ -76,6 +77,10 @@ export default function Dashboard() {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleLoading, setScheduleLoading] = useState(false);
 
+  const [zeroGData, setZeroGData] = useState<any>(null);
+  const [zeroGError, setZeroGError] = useState<string | null>(null);
+  const [zeroGLoading, setZeroGLoading] = useState(false);
+
   // Schedule barely changes day to day, so fetch it once, lazily, the
   // first time the Schedule tab is opened rather than on every load.
   useEffect(() => {
@@ -91,6 +96,24 @@ export default function Dashboard() {
       .catch((e) => setScheduleError(e.message))
       .finally(() => setScheduleLoading(false));
   }, [tab, scheduleData, scheduleLoading]);
+
+  // Zero-G targets — lazy, one-time fetch per visit to the tab. This
+  // endpoint does real work server-side (scans recent boxscores across
+  // the league), so it's cached 12h server-side and not refetched here
+  // on every tab switch within a session.
+  useEffect(() => {
+    if (tab !== "zerog" || zeroGData || zeroGLoading) return;
+    setZeroGLoading(true);
+    setZeroGError(null);
+    fetch("/api/zero-g")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.error) throw new Error(res.error);
+        setZeroGData(res);
+      })
+      .catch((e) => setZeroGError(e.message))
+      .finally(() => setZeroGLoading(false));
+  }, [tab, zeroGData, zeroGLoading]);
 
   // Only refetches from the NHL API when minGames changes — weight-slider
   // tweaks are re-scored entirely client-side, no network round trip.
@@ -215,12 +238,12 @@ export default function Dashboard() {
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex overflow-hidden rounded border border-rink-steel/50">
-          {(["skaters", "goalies", "schedule"] as const).map((t) => (
+          {(["skaters", "goalies", "schedule", "zerog"] as const).map((t) => (
             <button
               key={t}
               onClick={() => {
                 setTab(t);
-                if (t !== "schedule") setSortKey("valueAboveReplacement");
+                if (t !== "schedule" && t !== "zerog") setSortKey("valueAboveReplacement");
               }}
               className={`px-4 py-2 font-display text-sm uppercase tracking-wide transition-colors ${
                 tab === t
@@ -228,12 +251,18 @@ export default function Dashboard() {
                   : "bg-transparent text-rink-ice/70 hover:text-rink-ice"
               }`}
             >
-              {t === "skaters" ? "Skaters" : t === "goalies" ? "Goalies" : "Schedule"}
+              {t === "skaters"
+                ? "Skaters"
+                : t === "goalies"
+                ? "Goalies"
+                : t === "schedule"
+                ? "Schedule"
+                : "Zero-G"}
             </button>
           ))}
         </div>
 
-        {tab !== "schedule" && (
+        {tab !== "schedule" && tab !== "zerog" && (
           <div className="flex items-center gap-2 font-mono text-sm">
             <label htmlFor="minGames" className="text-rink-ice/60">
               Min GP
@@ -249,7 +278,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {tab !== "schedule" && (
+        {tab !== "schedule" && tab !== "zerog" && (
           <div className="flex overflow-hidden rounded border border-rink-steel/50">
             {(["targets", "all"] as const).map((s) => (
               <button
@@ -272,7 +301,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {tab !== "schedule" && (
+        {tab !== "schedule" && tab !== "zerog" && (
           <button
             onClick={() => setWeightsOpen((o) => !o)}
             className="rounded border border-rink-steel/50 px-3 py-2 font-mono text-xs uppercase tracking-wide text-rink-ice/70 hover:text-rink-ice"
@@ -282,7 +311,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {tab !== "schedule" && weightsOpen && (
+      {tab !== "schedule" && tab !== "zerog" && weightsOpen && (
         <div className="mb-6 rounded border border-rink-steel/40 bg-rink-steel/10 p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-xs uppercase tracking-wide text-rink-ice/50">
@@ -337,16 +366,35 @@ export default function Dashboard() {
         </>
       )}
 
-      {tab !== "schedule" && loading && (
+      {tab === "zerog" && (
+        <>
+          {zeroGLoading && (
+            <p className="font-mono text-sm text-rink-ice/60">
+              Scanning recent boxscores league-wide&hellip; this one&rsquo;s heavier than
+              the other tabs, first load only.
+            </p>
+          )}
+          {zeroGError && (
+            <p className="font-mono text-sm text-rink-line">
+              Couldn&rsquo;t load Zero-G targets: {zeroGError}
+            </p>
+          )}
+          {!zeroGLoading && !zeroGError && zeroGData && (
+            <ZeroGView candidates={zeroGData.candidates} lastN={zeroGData.lastN} />
+          )}
+        </>
+      )}
+
+      {tab !== "schedule" && tab !== "zerog" && loading && (
         <p className="font-mono text-sm text-rink-ice/60">Loading current NHL stats&hellip;</p>
       )}
-      {tab !== "schedule" && error && (
+      {tab !== "schedule" && tab !== "zerog" && error && (
         <p className="font-mono text-sm text-rink-line">
           Couldn&rsquo;t load NHL data: {error}
         </p>
       )}
 
-      {tab !== "schedule" && !loading && !error && sorted.length > 0 && (
+      {tab !== "schedule" && tab !== "zerog" && !loading && !error && sorted.length > 0 && (
         <div className="overflow-x-auto rounded border border-rink-steel/40">
           <table className="w-full min-w-[900px] border-collapse font-mono text-sm">
             <thead>
@@ -447,7 +495,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab !== "schedule" && !loading && !error && sorted.length === 0 && (
+      {tab !== "schedule" && tab !== "zerog" && !loading && !error && sorted.length === 0 && (
         <p className="font-mono text-sm text-rink-ice/60">
           No players match the current filters.
         </p>
