@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getJoinedSkaters, currentSeasonId, previousSeasonId } from "@/lib/nhlApi";
-import { scoreSkaters, estimateReplacementLevel } from "@/lib/scoring";
 
 export const revalidate = 3600; // re-fetch NHL data at most once an hour
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const seasonParam = searchParams.get("season");
-  // Games-played floor filters out one-game call-ups skewing rate stats.
   const minGames = Number(searchParams.get("minGames") ?? 3);
 
   try {
@@ -23,20 +21,11 @@ export async function GET(req: NextRequest) {
     }
 
     const eligible = skaters.filter((s) => Number(s.gamesPlayed) >= minGames);
-    const scored = scoreSkaters(eligible);
-    const { replacementScore, rosteredPlayerIds } = estimateReplacementLevel(
-      scored as any
-    );
 
-    const ranked = scored
-      .map((p) => ({
-        ...p,
-        rostered: rosteredPlayerIds.has((p as any).playerId),
-        valueAboveReplacement: p.overallScore - replacementScore,
-      }))
-      .sort((a, b) => b.overallScore - a.overallScore);
-
-    return NextResponse.json({ season, replacementScore, players: ranked });
+    // NOTE: scoring (z-scores, VOR, category weighting) happens client-side
+    // in app/page.tsx using lib/scoring.ts, so weight-slider changes don't
+    // need to re-hit the NHL API — only minGames/season changes do.
+    return NextResponse.json({ season, players: eligible });
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message ?? "Failed to fetch NHL skater data" },

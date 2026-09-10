@@ -5,12 +5,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // "The Dark Seider" team palette — void black, visor red, helmet
+        // steel, and a warning-amber secondary accent for the HUD/targeting-
+        // computer read-out feel.
         rink: {
-          ice: "#EDF3F5", // faint ice-white
-          board: "#0E1B23", // rink boards, deep blue-black
-          steel: "#3A4B57", // skate-steel grey-blue
-          line: "#C8102E", // centre-ice red, used as the single accent
-          gold: "#F2A900", // faceoff-dot amber, secondary accent for VOR highlight
+          ice: "#E9E7E4", // primary text — warm off-white, worn-armor tone
+          board: "#0B0B0C", // near-black void background
+          steel: "#53565C", // helmet-grey borders and secondary text
+          line: "#C8102E", // visor red — primary accent, matches the logo
+          ember: "#7A0F1F", // darker red for hover/pressed states
+          ash: "#1B1A1C", // panel fill, one step up from the void
+          gold: "#D98E2B", // warning-amber — secondary highlight/HUD accent
         },
       },
       fontFamily: {

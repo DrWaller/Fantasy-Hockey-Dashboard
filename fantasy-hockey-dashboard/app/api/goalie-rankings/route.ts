@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getGoalies, currentSeasonId, previousSeasonId } from "@/lib/nhlApi";
-import { scoreGoalies, estimateGoalieReplacementLevel } from "@/lib/scoring";
 
 export const revalidate = 3600;
 
@@ -19,20 +18,8 @@ export async function GET(req: NextRequest) {
     }
 
     const eligible = goalies.filter((g) => Number(g.gamesPlayed) >= minGames);
-    const scored = scoreGoalies(eligible);
-    const { replacementScore, rosteredPlayerIds } = estimateGoalieReplacementLevel(
-      scored as any
-    );
 
-    const ranked = scored
-      .map((g) => ({
-        ...g,
-        rostered: rosteredPlayerIds.has((g as any).playerId),
-        valueAboveReplacement: g.overallScore - replacementScore,
-      }))
-      .sort((a, b) => b.overallScore - a.overallScore);
-
-    return NextResponse.json({ season, replacementScore, players: ranked });
+    return NextResponse.json({ season, players: eligible });
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message ?? "Failed to fetch NHL goalie data" },

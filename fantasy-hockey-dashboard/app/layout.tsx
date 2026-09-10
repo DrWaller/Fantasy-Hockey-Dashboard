@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Oswald, IBM_Plex_Mono } from "next/font/google";
+import { Anton, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Oswald({
+const display = Anton({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400"],
   variable: "--font-display",
 });
 

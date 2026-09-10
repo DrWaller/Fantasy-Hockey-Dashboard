@@ -164,10 +164,14 @@ export function estimateReplacementLevel<
   remainingAll.slice(0, slots.Util).forEach((p) => rostered.add(p));
 
   const rosteredList = [...rostered];
-  const replacementScore = Math.min(...rosteredList.map((p) => p.overallScore));
+  const replacementPlayer = rosteredList.reduce((min, p) =>
+    p.overallScore < min.overallScore ? p : min
+  );
+  const replacementScore = replacementPlayer.overallScore;
 
   return {
     replacementScore,
+    replacementPlayer,
     rosteredCount: rosteredList.length,
     rosteredPlayerIds: new Set(rosteredList.map((p) => (p as any).playerId)),
   };
@@ -181,11 +185,11 @@ export function estimateGoalieReplacementLevel<
     (a, b) => b.overallScore - a.overallScore
   );
   const rostered = sorted.slice(0, slots.G);
-  const replacementScore = rostered.length
-    ? Math.min(...rostered.map((p) => p.overallScore))
-    : 0;
+  const replacementPlayer = rostered.length ? rostered[rostered.length - 1] : null;
+  const replacementScore = replacementPlayer ? replacementPlayer.overallScore : 0;
   return {
     replacementScore,
+    replacementPlayer,
     rosteredCount: rostered.length,
     rosteredPlayerIds: new Set(rostered.map((p) => (p as any).playerId)),
   };

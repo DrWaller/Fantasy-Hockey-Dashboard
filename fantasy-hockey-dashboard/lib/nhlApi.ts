@@ -7,10 +7,17 @@
 
 const STATS_BASE = "https://api.nhle.com/stats/rest/en";
 
+// Current NHL season in YYYYYYYY format, e.g. 2026-27 season -> "20262027".
+// Exposed as a function (not a constant) so it's trivial to swap during
+// the pre-season window when current-season data is still empty and you
+// want to fall back to last season for baseline context.
 export function currentSeasonId(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const startYear = now.getMonth() >= 8 ? year : year - 1;
+  // NHL season flips over around September. Before Sept, we're still in
+  // the tail of last season's fantasy relevance; from Sept on, treat the
+  // upcoming season as "current" even before puck drop.
+  const startYear = now.getMonth() >= 8 ? year : year - 1; // month 8 = September (0-indexed)
   return `${startYear}${startYear + 1}`;
 }
 
@@ -41,6 +48,9 @@ async function fetchReport(
 
   const res = await fetch(url, {
     headers: { Accept: "application/json" },
+    // Cache for an hour server-side — NHL stats don't need to be
+    // re-fetched on every page load. Adjust once deployed on Vercel
+    // (ISR / route segment config can also handle this).
     next: { revalidate: 3600 },
   });
 
@@ -57,6 +67,7 @@ export async function getSkaterSummary(seasonId: string) {
 }
 
 export async function getSkaterRealtime(seasonId: string) {
+  // hits, blockedShots, giveaways, takeaways, missedShots
   return fetchReport("skater/realtime", seasonId);
 }
 
@@ -64,6 +75,8 @@ export async function getGoalieSummary(seasonId: string) {
   return fetchReport("goalie/summary", seasonId);
 }
 
+// Joins skater/summary + skater/realtime on playerId into one flat record
+// per skater, which is what the scoring engine expects.
 export async function getJoinedSkaters(seasonId: string) {
   const [summary, realtime] = await Promise.all([
     getSkaterSummary(seasonId),
@@ -80,7 +93,7 @@ export async function getJoinedSkaters(seasonId: string) {
       playerId: s.playerId,
       name: s.skaterFullName,
       team: s.teamAbbrevs,
-      position: s.positionCode,
+      position: s.positionCode, // "C" | "L" | "R" | "D"
       gamesPlayed: s.gamesPlayed,
       goals: s.goals,
       assists: s.assists,
