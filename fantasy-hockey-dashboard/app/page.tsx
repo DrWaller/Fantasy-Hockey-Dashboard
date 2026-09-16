@@ -11,6 +11,8 @@ import {
 import ScheduleView from "@/components/ScheduleView";
 import ZeroGView from "@/components/ZeroGView";
 import LeagueView from "@/components/LeagueView";
+import OptimizerView from "@/components/OptimizerView";
+import WeekStrategyView from "@/components/WeekStrategyView";
 import { allTeamNames, normalizeName } from "@/lib/rosterLookup";
 import { buildEffectiveOwnership, effectiveOwner, YOUR_TEAM } from "@/lib/effectiveRoster";
 
@@ -59,7 +61,7 @@ function zColor(z: number): string {
 
 export default function Dashboard() {
   const [tab, setTab] = useState<
-    "skaters" | "goalies" | "schedule" | "zerog" | "league"
+    "skaters" | "goalies" | "schedule" | "zerog" | "league" | "optimizer" | "week"
   >("skaters");
   const [minGames, setMinGames] = useState(3);
   const [showOnly, setShowOnly] = useState<"all" | "targets">("targets");
@@ -143,7 +145,12 @@ export default function Dashboard() {
   // League tab needs every rostered player regardless of games played
   // (minGames=0), independent of the Min GP control used elsewhere.
   useEffect(() => {
-    if (tab !== "league" || leagueSkaters || leagueLoading) return;
+    if (
+      (tab !== "league" && tab !== "optimizer" && tab !== "week") ||
+      leagueSkaters ||
+      leagueLoading
+    )
+      return;
     setLeagueLoading(true);
     setLeagueError(null);
     Promise.all([
@@ -163,7 +170,7 @@ export default function Dashboard() {
   // Schedule barely changes day to day, so fetch it once, lazily, the
   // first time the Schedule tab is opened rather than on every load.
   useEffect(() => {
-    if (tab !== "schedule" || scheduleData || scheduleLoading) return;
+    if ((tab !== "schedule" && tab !== "optimizer") || scheduleData || scheduleLoading) return;
     setScheduleLoading(true);
     setScheduleError(null);
     fetch("/api/schedule")
@@ -320,15 +327,17 @@ export default function Dashboard() {
       </header>
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
-        <div className="flex overflow-hidden rounded border border-rink-steel/50">
-          {(["skaters", "goalies", "schedule", "zerog", "league"] as const).map((t) => (
+        <div className="flex w-full overflow-x-auto rounded border border-rink-steel/50 sm:w-auto">
+          {(
+            ["skaters", "goalies", "schedule", "zerog", "league", "optimizer", "week"] as const
+          ).map((t) => (
             <button
               key={t}
               onClick={() => {
                 setTab(t);
                 if (t === "skaters" || t === "goalies") setSortKey("valueAboveReplacement");
               }}
-              className={`px-4 py-2 font-display text-sm uppercase tracking-wide transition-colors ${
+              className={`shrink-0 whitespace-nowrap px-4 py-2 font-display text-sm uppercase tracking-wide transition-colors ${
                 tab === t
                   ? "bg-rink-line text-white"
                   : "bg-transparent text-rink-ice/70 hover:text-rink-ice"
@@ -342,12 +351,20 @@ export default function Dashboard() {
                 ? "Schedule"
                 : t === "zerog"
                 ? "Zero-G"
-                : "League"}
+                : t === "league"
+                ? "League"
+                : t === "optimizer"
+                ? "Optimizer"
+                : "Week"}
             </button>
           ))}
         </div>
 
-        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && (
+        {tab !== "schedule" &&
+          tab !== "zerog" &&
+          tab !== "league" &&
+          tab !== "optimizer" &&
+          tab !== "week" && (
           <div className="flex items-center gap-2 font-mono text-sm">
             <label htmlFor="minGames" className="text-rink-ice/60">
               Min GP
@@ -363,7 +380,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && (
+        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && (
           <div className="flex overflow-hidden rounded border border-rink-steel/50">
             {(["targets", "all"] as const).map((s) => (
               <button
@@ -386,7 +403,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && (
+        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && (
           <button
             onClick={() => setWeightsOpen((o) => !o)}
             className="rounded border border-rink-steel/50 px-3 py-2 font-mono text-xs uppercase tracking-wide text-rink-ice/70 hover:text-rink-ice"
@@ -396,7 +413,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && weightsOpen && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && weightsOpen && (
         <div className="mb-6 rounded border border-rink-steel/40 bg-rink-steel/10 p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-xs uppercase tracking-wide text-rink-ice/50">
@@ -492,16 +509,67 @@ export default function Dashboard() {
         </>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && loading && (
+      {tab === "optimizer" && (
+        <>
+          {(leagueLoading || scheduleLoading) && (
+            <p className="font-mono text-sm text-rink-ice/60">
+              Loading your roster and the schedule&hellip; first load only.
+            </p>
+          )}
+          {(leagueError || scheduleError) && (
+            <p className="font-mono text-sm text-rink-line">
+              Couldn&rsquo;t load the optimizer: {leagueError || scheduleError}
+            </p>
+          )}
+          {!leagueLoading &&
+            !scheduleLoading &&
+            !leagueError &&
+            !scheduleError &&
+            leagueSkaters &&
+            leagueGoalies &&
+            scheduleData && (
+              <OptimizerView
+                rawSkaters={leagueSkaters}
+                rawGoalies={leagueGoalies}
+                grid={scheduleData.grid}
+                ownership={ownership}
+              />
+            )}
+        </>
+      )}
+
+      {tab === "week" && (
+        <>
+          {leagueLoading && (
+            <p className="font-mono text-sm text-rink-ice/60">
+              Loading your roster&hellip; first load only.
+            </p>
+          )}
+          {leagueError && (
+            <p className="font-mono text-sm text-rink-line">
+              Couldn&rsquo;t load the week strategy page: {leagueError}
+            </p>
+          )}
+          {!leagueLoading && !leagueError && leagueSkaters && leagueGoalies && (
+            <WeekStrategyView
+              rawSkaters={leagueSkaters}
+              rawGoalies={leagueGoalies}
+              ownership={ownership}
+            />
+          )}
+        </>
+      )}
+
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && loading && (
         <p className="font-mono text-sm text-rink-ice/60">Loading current NHL stats&hellip;</p>
       )}
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && error && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && error && (
         <p className="font-mono text-sm text-rink-line">
           Couldn&rsquo;t load NHL data: {error}
         </p>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && !loading && !error && sorted.length > 0 && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && !loading && !error && sorted.length > 0 && (
         <div className="overflow-x-auto rounded border border-rink-steel/40">
           <table className="w-full min-w-[900px] border-collapse font-mono text-sm">
             <thead>
@@ -624,7 +692,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && !loading && !error && sorted.length === 0 && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && !loading && !error && sorted.length === 0 && (
         <p className="font-mono text-sm text-rink-ice/60">
           No players match the current filters.
         </p>
