@@ -10,6 +10,9 @@ import {
 } from "@/lib/scoring";
 import ScheduleView from "@/components/ScheduleView";
 import ZeroGView from "@/components/ZeroGView";
+import LeagueView from "@/components/LeagueView";
+import { allTeamNames, normalizeName } from "@/lib/rosterLookup";
+import { buildEffectiveOwnership, effectiveOwner, YOUR_TEAM } from "@/lib/effectiveRoster";
 
 type RawSkater = {
   playerId: number;
@@ -55,7 +58,9 @@ function zColor(z: number): string {
 }
 
 export default function Dashboard() {
-  const [tab, setTab] = useState<"skaters" | "goalies" | "schedule" | "zerog">("skaters");
+  const [tab, setTab] = useState<
+    "skaters" | "goalies" | "schedule" | "zerog" | "league"
+  >("skaters");
   const [minGames, setMinGames] = useState(3);
   const [showOnly, setShowOnly] = useState<"all" | "targets">("targets");
   const [sortKey, setSortKey] = useState<string>("valueAboveReplacement");
@@ -66,6 +71,55 @@ export default function Dashboard() {
   // "boost/bust" call. Session-only for now (resets on page reload); ask
   // for persistent storage if this proves worth keeping across visits.
   const [overrides, setOverrides] = useState<Record<number, number>>({});
+
+  // Live add/drop overlay on top of the draft-night roster snapshot —
+  // persisted server-side (Redis), synced across devices. Fetched once on
+  // mount since it affects the Owner column shown by default.
+  const [rosterOverrides, setRosterOverrides] = useState<Record<string, any>>({});
+  const [rosterSaveError, setRosterSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/roster")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.overrides) setRosterOverrides(res.overrides);
+      })
+      .catch(() => {
+        // Non-fatal — dashboard still works from the static baseline.
+      });
+  }, []);
+
+  const ownership = useMemo(
+    () => buildEffectiveOwnership(rosterOverrides as any),
+    [rosterOverrides]
+  );
+
+  async function handleOwnerChange(playerName: string, team: string | null) {
+    setRosterSaveError(null);
+    const key = normalizeName(playerName);
+    // Optimistic update so the dropdown feels instant.
+    setRosterOverrides((prev) => ({
+      ...prev,
+      [key]: { playerName, team, updatedAt: new Date().toISOString() },
+    }));
+    try {
+      const res = await fetch("/api/roster", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ player: playerName, team }),
+      });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setRosterOverrides(json.overrides);
+    } catch (e: any) {
+      setRosterSaveError(e.message ?? "Failed to save roster change");
+      // Re-sync from server so the UI doesn't drift from reality on failure.
+      fetch("/api/roster")
+        .then((r) => r.json())
+        .then((res) => res.overrides && setRosterOverrides(res.overrides))
+        .catch(() => {});
+    }
+  }
 
   const [rawSkaters, setRawSkaters] = useState<RawSkater[] | null>(null);
   const [rawGoalies, setRawGoalies] = useState<RawGoalie[] | null>(null);
@@ -80,6 +134,31 @@ export default function Dashboard() {
   const [zeroGData, setZeroGData] = useState<any>(null);
   const [zeroGError, setZeroGError] = useState<string | null>(null);
   const [zeroGLoading, setZeroGLoading] = useState(false);
+
+  const [leagueSkaters, setLeagueSkaters] = useState<any[] | null>(null);
+  const [leagueGoalies, setLeagueGoalies] = useState<any[] | null>(null);
+  const [leagueError, setLeagueError] = useState<string | null>(null);
+  const [leagueLoading, setLeagueLoading] = useState(false);
+
+  // League tab needs every rostered player regardless of games played
+  // (minGames=0), independent of the Min GP control used elsewhere.
+  useEffect(() => {
+    if (tab !== "league" || leagueSkaters || leagueLoading) return;
+    setLeagueLoading(true);
+    setLeagueError(null);
+    Promise.all([
+      fetch(`/api/rankings?minGames=0`).then((r) => r.json()),
+      fetch(`/api/goalie-rankings?minGames=0`).then((r) => r.json()),
+    ])
+      .then(([skaterRes, goalieRes]) => {
+        if (skaterRes.error) throw new Error(skaterRes.error);
+        if (goalieRes.error) throw new Error(goalieRes.error);
+        setLeagueSkaters(skaterRes.players);
+        setLeagueGoalies(goalieRes.players);
+      })
+      .catch((e) => setLeagueError(e.message))
+      .finally(() => setLeagueLoading(false));
+  }, [tab, leagueSkaters, leagueLoading]);
 
   // Schedule barely changes day to day, so fetch it once, lazily, the
   // first time the Schedule tab is opened rather than on every load.
@@ -140,40 +219,44 @@ export default function Dashboard() {
   const scoredSkaters = useMemo(() => {
     if (!rawSkaters) return null;
     const scored = scoreSkaters(rawSkaters, weights);
-    const { replacementScore, replacementPlayer, rosteredPlayerIds } =
-      estimateReplacementLevel(scored as any);
+    const { replacementScore, replacementPlayer } = estimateReplacementLevel(scored as any);
     return scored
       .map((p) => {
         const adj = overrides[(p as any).playerId] ?? 0;
+        const owner = effectiveOwner((p as any).name, ownership);
         return {
           ...p,
-          rostered: rosteredPlayerIds.has((p as any).playerId),
+          owner,
+          rostered: owner !== null, // real roster data, not model-estimated
           manualAdjustment: adj,
           valueAboveReplacement: p.overallScore - replacementScore + adj,
           replacementPlayerName: (replacementPlayer as any)?.name ?? null,
         };
       })
       .sort((a, b) => b.valueAboveReplacement - a.valueAboveReplacement);
-  }, [rawSkaters, weights, overrides]);
+  }, [rawSkaters, weights, overrides, ownership]);
 
   const scoredGoalies = useMemo(() => {
     if (!rawGoalies) return null;
     const scored = scoreGoalies(rawGoalies, weights);
-    const { replacementScore, replacementPlayer, rosteredPlayerIds } =
-      estimateGoalieReplacementLevel(scored as any);
+    const { replacementScore, replacementPlayer } = estimateGoalieReplacementLevel(
+      scored as any
+    );
     return scored
       .map((g) => {
         const adj = overrides[(g as any).playerId] ?? 0;
+        const owner = effectiveOwner((g as any).name, ownership);
         return {
           ...g,
-          rostered: rosteredPlayerIds.has((g as any).playerId),
+          owner,
+          rostered: owner !== null, // real roster data, not model-estimated
           manualAdjustment: adj,
           valueAboveReplacement: g.overallScore - replacementScore + adj,
           replacementPlayerName: (replacementPlayer as any)?.name ?? null,
         };
       })
       .sort((a, b) => b.valueAboveReplacement - a.valueAboveReplacement);
-  }, [rawGoalies, weights, overrides]);
+  }, [rawGoalies, weights, overrides, ownership]);
 
   function setOverride(playerId: number, value: number) {
     setOverrides((o) => {
@@ -238,12 +321,12 @@ export default function Dashboard() {
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex overflow-hidden rounded border border-rink-steel/50">
-          {(["skaters", "goalies", "schedule", "zerog"] as const).map((t) => (
+          {(["skaters", "goalies", "schedule", "zerog", "league"] as const).map((t) => (
             <button
               key={t}
               onClick={() => {
                 setTab(t);
-                if (t !== "schedule" && t !== "zerog") setSortKey("valueAboveReplacement");
+                if (t === "skaters" || t === "goalies") setSortKey("valueAboveReplacement");
               }}
               className={`px-4 py-2 font-display text-sm uppercase tracking-wide transition-colors ${
                 tab === t
@@ -257,12 +340,14 @@ export default function Dashboard() {
                 ? "Goalies"
                 : t === "schedule"
                 ? "Schedule"
-                : "Zero-G"}
+                : t === "zerog"
+                ? "Zero-G"
+                : "League"}
             </button>
           ))}
         </div>
 
-        {tab !== "schedule" && tab !== "zerog" && (
+        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && (
           <div className="flex items-center gap-2 font-mono text-sm">
             <label htmlFor="minGames" className="text-rink-ice/60">
               Min GP
@@ -278,7 +363,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {tab !== "schedule" && tab !== "zerog" && (
+        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && (
           <div className="flex overflow-hidden rounded border border-rink-steel/50">
             {(["targets", "all"] as const).map((s) => (
               <button
@@ -291,17 +376,17 @@ export default function Dashboard() {
                 }`}
                 title={
                   s === "targets"
-                    ? "Players our model doesn't project as typical 12-team starters — likely available or worth pursuing"
-                    : "Every eligible player, including likely-rostered starters"
+                    ? "True free agents per your last roster import — not currently rostered by any of the 12 teams"
+                    : "Every eligible player, rostered or not"
                 }
               >
-                {s === "targets" ? "Likely targets" : "All players"}
+                {s === "targets" ? "Free agents" : "All players"}
               </button>
             ))}
           </div>
         )}
 
-        {tab !== "schedule" && tab !== "zerog" && (
+        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && (
           <button
             onClick={() => setWeightsOpen((o) => !o)}
             className="rounded border border-rink-steel/50 px-3 py-2 font-mono text-xs uppercase tracking-wide text-rink-ice/70 hover:text-rink-ice"
@@ -311,7 +396,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {tab !== "schedule" && tab !== "zerog" && weightsOpen && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && weightsOpen && (
         <div className="mb-6 rounded border border-rink-steel/40 bg-rink-steel/10 p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-xs uppercase tracking-wide text-rink-ice/50">
@@ -385,16 +470,38 @@ export default function Dashboard() {
         </>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && loading && (
+      {tab === "league" && (
+        <>
+          {leagueLoading && (
+            <p className="font-mono text-sm text-rink-ice/60">
+              Loading full league stats&hellip; first load only.
+            </p>
+          )}
+          {leagueError && (
+            <p className="font-mono text-sm text-rink-line">
+              Couldn&rsquo;t load league comparison: {leagueError}
+            </p>
+          )}
+          {!leagueLoading && !leagueError && leagueSkaters && leagueGoalies && (
+            <LeagueView
+              rawSkaters={leagueSkaters}
+              rawGoalies={leagueGoalies}
+              ownership={ownership}
+            />
+          )}
+        </>
+      )}
+
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && loading && (
         <p className="font-mono text-sm text-rink-ice/60">Loading current NHL stats&hellip;</p>
       )}
-      {tab !== "schedule" && tab !== "zerog" && error && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && error && (
         <p className="font-mono text-sm text-rink-line">
           Couldn&rsquo;t load NHL data: {error}
         </p>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && !loading && !error && sorted.length > 0 && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && !loading && !error && sorted.length > 0 && (
         <div className="overflow-x-auto rounded border border-rink-steel/40">
           <table className="w-full min-w-[900px] border-collapse font-mono text-sm">
             <thead>
@@ -403,6 +510,7 @@ export default function Dashboard() {
                 <th className="px-3 py-2">Player</th>
                 {tab === "skaters" && <th className="px-3 py-2">Pos</th>}
                 <th className="px-3 py-2">Tm</th>
+                <th className="px-3 py-2">Owner</th>
                 <th className="px-3 py-2 text-right">GP</th>
                 {categories.map((cat) => (
                   <th
@@ -441,6 +549,27 @@ export default function Dashboard() {
                     <td className="px-3 py-1.5 text-rink-ice/60">{r.position}</td>
                   )}
                   <td className="px-3 py-1.5 text-rink-ice/60">{r.team}</td>
+                  <td className="px-2 py-1.5">
+                    <select
+                      value={r.owner ?? ""}
+                      onChange={(e) => handleOwnerChange(r.name, e.target.value || null)}
+                      className={`w-full rounded border border-rink-steel/40 bg-rink-board px-1 py-0.5 text-xs ${
+                        r.owner === YOUR_TEAM
+                          ? "font-semibold text-rink-line"
+                          : r.owner
+                          ? "text-rink-ice/50"
+                          : "text-rink-gold"
+                      }`}
+                      title="Add/drop this player — saved for everyone, synced across devices"
+                    >
+                      <option value="">FA</option>
+                      {allTeamNames().map((t) => (
+                        <option key={t} value={t}>
+                          {t === YOUR_TEAM ? "You" : t}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="stat-num px-3 py-1.5 text-right text-rink-ice/60">
                     {r.gamesPlayed}
                   </td>
@@ -495,16 +624,22 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && !loading && !error && sorted.length === 0 && (
+      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && !loading && !error && sorted.length === 0 && (
         <p className="font-mono text-sm text-rink-ice/60">
           No players match the current filters.
         </p>
       )}
 
+      {rosterSaveError && (
+        <p className="mt-3 font-mono text-sm text-rink-line">
+          Couldn&rsquo;t save that roster change: {rosterSaveError}
+        </p>
+      )}
+
       <footer className="mt-8 font-mono text-xs text-rink-ice/40">
-        Data: NHL stats API. &ldquo;Likely targets&rdquo; is model-estimated (not synced to your
-        actual Yahoo league rosters yet) &mdash; cross-check against your league&rsquo;s free
-        agent list.
+        Data: NHL stats API. Ownership starts from your league&rsquo;s draft-night Team
+        Comparison import, plus any add/drop edits made here &mdash; synced across
+        devices. Use the Owner dropdown on any player to update it.
       </footer>
     </main>
   );

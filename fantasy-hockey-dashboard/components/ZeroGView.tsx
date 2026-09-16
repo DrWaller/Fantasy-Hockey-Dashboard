@@ -34,14 +34,13 @@ export default function ZeroGView({
   return (
     <div>
       <p className="mb-4 max-w-2xl font-mono text-xs text-rink-ice/50">
-        Below-replacement goalies (per the dashboard&rsquo;s own VOR line) who have
-        started {" "}
+        True free agents (per your last roster import) who have started {" "}
         <span className="text-rink-gold">2+ of their last {lastN} team games</span>{" "}
         or are on a{" "}
         <span className="text-rink-line">2+ game current starting streak</span> &mdash;
         the pattern a backup taking over a job usually shows before the wider
-        market catches on. Not synced to your Yahoo roster yet, so cross-check
-        against your free agent list.
+        market catches on. Ownership is a draft-night snapshot, so a very recent
+        add elsewhere won&rsquo;t be excluded yet.
       </p>
       <div className="overflow-x-auto rounded border border-rink-steel/40">
         <table className="w-full min-w-[700px] border-collapse font-mono text-sm">

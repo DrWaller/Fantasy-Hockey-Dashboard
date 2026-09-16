@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getGoalies, currentSeasonId, previousSeasonId } from "@/lib/nhlApi";
 import { scoreGoalies, estimateGoalieReplacementLevel } from "@/lib/scoring";
 import { getLeagueGoalieStartLogs, goalieRecentPattern } from "@/lib/nhlGoalieStarts";
+import { getAllOverrides } from "@/lib/rosterOverrides";
+import { buildEffectiveOwnership, effectiveOwner } from "@/lib/effectiveRoster";
 
 export const revalidate = 43200; // 12 hours — goalie job battles don't move hourly
 
@@ -25,8 +27,14 @@ export async function GET(req: NextRequest) {
     const scored = scoreGoalies(rawGoalies);
     const { replacementScore } = estimateGoalieReplacementLevel(scored as any);
 
-    // Below-replacement only — this is the "filter out obvious #1s" step.
-    const belowReplacement = scored.filter((g) => g.overallScore < replacementScore);
+    // Below-replacement AND not already rostered by anyone (including
+    // your own bench) — this is the real "actually available" filter,
+    // now checked against live ownership (baseline + add/drop overrides).
+    const overrides = await getAllOverrides();
+    const ownership = buildEffectiveOwnership(overrides);
+    const belowReplacement = scored.filter(
+      (g) => g.overallScore < replacementScore && effectiveOwner((g as any).name, ownership) === null
+    );
 
     const startLogs = await getLeagueGoalieStartLogs(season, gamesPerTeam);
 
