@@ -6,6 +6,7 @@ import { computeTeamCategoryTotals, rankTeamsByCategory } from "@/lib/leagueTeam
 import { allTeamNames, YOUR_TEAM } from "@/lib/rosterLookup";
 import type { OwnershipMap } from "@/lib/effectiveRoster";
 import { matchupForWeek, weekDateRange, weekNumberForDate } from "@/lib/matchupSchedule";
+import { projectTeamWeek, callMatchup, getCategoryConfidence } from "@/lib/weeklyProjection";
 import OptimizerView from "./OptimizerView";
 
 const ALL_CATS = [...SKATER_CATEGORIES, ...GOALIE_CATEGORIES];
@@ -126,6 +127,14 @@ export default function WeekStrategyView({
   const yourTotals = totals.find((t) => t.team === YOUR_TEAM);
   const oppTotals = opponent ? totals.find((t) => t.team === opponent) : undefined;
 
+  const projections = useMemo(() => {
+    if (!opponent || !thisWeekGrid) return null;
+    return {
+      you: projectTeamWeek(YOUR_TEAM, rawSkaters, rawGoalies, ownership, thisWeekGrid),
+      opp: projectTeamWeek(opponent, rawSkaters, rawGoalies, ownership, thisWeekGrid),
+    };
+  }, [opponent, thisWeekGrid, rawSkaters, rawGoalies, ownership]);
+
   return (
     <div>
       <div className="mb-6 rounded border border-rink-line/30 bg-rink-ash p-4">
@@ -177,15 +186,84 @@ export default function WeekStrategyView({
         </p>
       </div>
 
+      {opponent && projections && (
+        <div className="mb-8">
+          <h2 className="mb-2 font-display text-lg uppercase tracking-wide text-rink-ice/80">
+            This week&rsquo;s projected matchup vs. {opponent}
+          </h2>
+          <p className="mb-3 max-w-2xl font-mono text-xs text-rink-ice/50">
+            Projected from each team's optimal lineup this week (games scheduled &times;
+            season per-game rate). <span className="text-rink-ice">High-confidence</span>{" "}
+            categories are volume-driven and predictable; <span className="text-rink-steel">low-confidence</span>{" "}
+            ones (Wins, Shutouts) are binary events this model can't really see coming — treat
+            those as informed guesses, not predictions.
+          </p>
+          <div className="overflow-x-auto rounded border border-rink-steel/40">
+            <table className="w-full min-w-[640px] border-collapse font-mono text-sm">
+              <thead>
+                <tr className="border-b border-rink-steel/40 text-left text-xs uppercase tracking-wide text-rink-ice/50">
+                  <th className="px-3 py-2">Category</th>
+                  <th className="px-3 py-2 text-right">You (proj)</th>
+                  <th className="px-3 py-2 text-right">{opponent} (proj)</th>
+                  <th className="px-3 py-2 text-right">Call</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ALL_CATS.map((cat) => {
+                  const yourVal = projections.you.projected[cat.key] ?? 0;
+                  const oppVal = projections.opp.projected[cat.key] ?? 0;
+                  const { call, leader } = callMatchup(yourVal, oppVal, cat.higherIsBetter);
+                  const confidence = getCategoryConfidence(cat.key);
+                  const isPct = cat.key === "shootingPct" || cat.key === "savePct";
+                  const format = (v: number) =>
+                    isPct ? (v * 100).toFixed(1) : cat.key === "goalsAgainstAverage" ? v.toFixed(2) : v.toFixed(1);
+                  return (
+                    <tr key={cat.key} className="border-b border-rink-steel/10">
+                      <td
+                        className={`px-3 py-1.5 ${
+                          confidence === "low" ? "text-rink-steel" : "text-rink-ice/80"
+                        }`}
+                        title={`${cat.label} — ${confidence} confidence`}
+                      >
+                        {cat.abbrev}
+                      </td>
+                      <td className="stat-num px-3 py-1.5 text-right text-rink-ice/70">
+                        {format(yourVal)}
+                      </td>
+                      <td className="stat-num px-3 py-1.5 text-right text-rink-ice/70">
+                        {format(oppVal)}
+                      </td>
+                      <td className="px-3 py-1.5 text-right">
+                        {call === "toss-up" ? (
+                          <span className="text-rink-gold">Toss-up</span>
+                        ) : leader === "you" ? (
+                          <span className={call === "favored" ? "text-rink-line font-semibold" : "text-rink-line"}>
+                            {call === "favored" ? "You favored" : "Lean you"}
+                          </span>
+                        ) : (
+                          <span className={call === "favored" ? "text-rink-steel font-semibold" : "text-rink-steel"}>
+                            {call === "favored" ? "They favored" : "Lean them"}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {opponent && yourTotals && oppTotals && (
         <div className="mb-8">
           <h2 className="mb-2 font-display text-lg uppercase tracking-wide text-rink-ice/80">
-            Matchup focus vs. {opponent}
+            Season-long standing vs. {opponent}
           </h2>
           <p className="mb-3 max-w-2xl font-mono text-xs text-rink-ice/50">
-            Categories you're currently behind in league-wide standing are worth targeting
-            this week &mdash; ones you're comfortably ahead in can absorb a down week if it
-            frees you up elsewhere.
+            League-wide rank for the full season so far — a slower-moving signal than the
+            week's projection above, useful for longer-term category strategy (trades,
+            keeper decisions) rather than this specific matchup.
           </p>
           <div className="overflow-x-auto rounded border border-rink-steel/40">
             <table className="w-full min-w-[600px] border-collapse font-mono text-sm">

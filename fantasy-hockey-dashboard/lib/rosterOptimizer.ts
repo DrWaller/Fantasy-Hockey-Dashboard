@@ -4,31 +4,37 @@ import { normalizeName } from "./rosterLookup";
 import { effectiveRosterForTeam, effectiveOwner, OwnershipMap, YOUR_TEAM } from "./effectiveRoster";
 import { scoreSkaters, scoreGoalies } from "./scoring";
 
-type GameGridDay = { date: string; label: string };
-type GameGridTeamRow = { team: string; playsOn: Record<string, boolean> };
-type GameGrid = { days: GameGridDay[]; dailyTotals: Record<string, number>; rows: GameGridTeamRow[] };
+export type GameGridDay = { date: string; label: string };
+export type GameGridTeamRow = { team: string; playsOn: Record<string, boolean> };
+export type GameGrid = {
+  days: GameGridDay[];
+  dailyTotals: Record<string, number>;
+  rows: GameGridTeamRow[];
+};
 
-type RosterPlayer = {
+export type RosterPlayer = {
   name: string;
   position: "C" | "LW" | "RW" | "D" | "G";
   nhlTricode: string;
 };
 
-function mapPosition(code: string): "C" | "LW" | "RW" | "D" {
+export function mapPosition(code: string): "C" | "LW" | "RW" | "D" {
   if (code === "L") return "LW";
   if (code === "R") return "RW";
   return code as "C" | "D";
 }
 
-/** Cross-references your effective roster against live NHL data to get
- * each rostered player's position and NHL team (in schedule-grid tricode
- * form), which the season-total stats endpoints alone don't tell you. */
-export function buildYourRosterPlayers(
+/** Cross-references a team's effective roster against live NHL data to
+ * get each rostered player's position and NHL team (in schedule-grid
+ * tricode form), which the season-total stats endpoints alone don't
+ * tell you. Works for any of the 12 teams, not just yours. */
+export function buildRosterPlayersForTeam(
+  team: string,
   rawSkaters: any[],
   rawGoalies: any[],
   ownership: OwnershipMap
 ): RosterPlayer[] {
-  const names = effectiveRosterForTeam(YOUR_TEAM, ownership);
+  const names = effectiveRosterForTeam(team, ownership);
   const skatersByName = new Map(rawSkaters.map((s) => [normalizeName(s.name), s]));
   const goaliesByName = new Map(rawGoalies.map((g) => [normalizeName(g.name), g]));
 
@@ -50,6 +56,14 @@ export function buildYourRosterPlayers(
   return players;
 }
 
+export function buildYourRosterPlayers(
+  rawSkaters: any[],
+  rawGoalies: any[],
+  ownership: OwnershipMap
+): RosterPlayer[] {
+  return buildRosterPlayersForTeam(YOUR_TEAM, rawSkaters, rawGoalies, ownership);
+}
+
 function teamPlaysOn(grid: GameGrid, tricode: string, date: string): boolean {
   const row = grid.rows.find((r) => r.team === tricode);
   return row ? !!row.playsOn[date] : false;
@@ -61,6 +75,7 @@ export type DailyLineup = {
   filled: Record<string, number>;
   capacity: Record<string, number>;
   openSlots: { type: string; count: number }[];
+  started: RosterPlayer[];
   benched: { name: string; position: string }[];
 };
 
@@ -90,10 +105,13 @@ export function computeDailyLineups(
 
     const filled: Record<string, number> = { C: 0, LW: 0, RW: 0, F: 0, D: 0, Util: 0, G: 0 };
     const benched: RosterPlayer[] = [];
+    const started: RosterPlayer[] = [];
 
     goalies.forEach((g) => {
-      if (filled.G < capacityTotals.G) filled.G++;
-      else benched.push(g);
+      if (filled.G < capacityTotals.G) {
+        filled.G++;
+        started.push(g);
+      } else benched.push(g);
     });
 
     const leftover: RosterPlayer[] = [];
@@ -101,8 +119,10 @@ export function computeDailyLineups(
       skaters
         .filter((p) => p.position === pos)
         .forEach((p) => {
-          if (filled[pos] < capacityTotals[pos]) filled[pos]++;
-          else leftover.push(p);
+          if (filled[pos] < capacityTotals[pos]) {
+            filled[pos]++;
+            started.push(p);
+          } else leftover.push(p);
         });
     });
 
@@ -110,14 +130,18 @@ export function computeDailyLineups(
     const leftoverD = leftover.filter((p) => p.position === "D");
     const stillLeftover: RosterPlayer[] = [];
     leftoverForwards.forEach((p) => {
-      if (filled.F < capacityTotals.F) filled.F++;
-      else stillLeftover.push(p);
+      if (filled.F < capacityTotals.F) {
+        filled.F++;
+        started.push(p);
+      } else stillLeftover.push(p);
     });
     stillLeftover.push(...leftoverD);
 
     stillLeftover.forEach((p) => {
-      if (filled.Util < capacityTotals.Util) filled.Util++;
-      else benched.push(p);
+      if (filled.Util < capacityTotals.Util) {
+        filled.Util++;
+        started.push(p);
+      } else benched.push(p);
     });
 
     const openSlots = Object.entries(capacityTotals)
@@ -130,6 +154,7 @@ export function computeDailyLineups(
       filled,
       capacity: capacityTotals,
       openSlots,
+      started,
       benched: benched.map((p) => ({ name: p.name, position: p.position })),
     };
   });

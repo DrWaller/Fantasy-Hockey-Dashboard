@@ -11,7 +11,11 @@ export const WEEK1_MONDAY = "2026-09-28";
 
 // Maps the opponent names as Yahoo displays them to the (truncated) team
 // keys used in lib/rosters.ts, so this data can drive ownership lookups.
-const NAME_TO_ROSTER_KEY: Record<string, string> = {
+// Yahoo's team names as they actually appear via the API/UI, mapped to
+// the truncated keys already used throughout this app (from the
+// Team_Comparison workbook import). Exported so the live Yahoo sync can
+// reuse the same mapping instead of duplicating it.
+export const YAHOO_NAME_TO_ROSTER_KEY: Record<string, string> = {
   "UmZy's Team": "UmZy's...",
   "THE GOON SQUAD": "THE GO...",
   "Mark's Team": "Mark's T...",
@@ -24,6 +28,7 @@ const NAME_TO_ROSTER_KEY: Record<string, string> = {
   "Arkham Knights": "Arkham...",
   "Mother Puckers": "Mother...",
 };
+const NAME_TO_ROSTER_KEY = YAHOO_NAME_TO_ROSTER_KEY;
 
 export type MatchupWeek = {
   week: number;

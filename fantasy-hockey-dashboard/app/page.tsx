@@ -12,6 +12,7 @@ import ScheduleView from "@/components/ScheduleView";
 import ZeroGView from "@/components/ZeroGView";
 import LeagueView from "@/components/LeagueView";
 import OptimizerView from "@/components/OptimizerView";
+import YahooConnectBanner from "@/components/YahooConnectBanner";
 import WeekStrategyView from "@/components/WeekStrategyView";
 import { allTeamNames, normalizeName } from "@/lib/rosterLookup";
 import { buildEffectiveOwnership, effectiveOwner, YOUR_TEAM } from "@/lib/effectiveRoster";
@@ -74,11 +75,30 @@ export default function Dashboard() {
   // for persistent storage if this proves worth keeping across visits.
   const [overrides, setOverrides] = useState<Record<number, number>>({});
 
-  // Live add/drop overlay on top of the draft-night roster snapshot —
-  // persisted server-side (Redis), synced across devices. Fetched once on
-  // mount since it affects the Owner column shown by default.
+  // Live add/drop overlay on top of the roster baseline — persisted
+  // server-side (Redis), synced across devices. Fetched once on mount
+  // since it affects the Owner column shown by default.
   const [rosterOverrides, setRosterOverrides] = useState<Record<string, any>>({});
   const [rosterSaveError, setRosterSaveError] = useState<string | null>(null);
+
+  // The baseline itself: live Yahoo rosters when connected, otherwise
+  // null (meaning "use the bundled static snapshot").
+  const [rosterBaseline, setRosterBaseline] = useState<Record<string, any> | null>(null);
+  const [yahooConnected, setYahooConnected] = useState(false);
+  const [yahooSyncedAt, setYahooSyncedAt] = useState<string | null>(null);
+  const [yahooStatusMessage, setYahooStatusMessage] = useState<
+    { type: "success" | "error"; text: string } | null
+  >(null);
+
+  function refreshRosterBaseline() {
+    fetch("/api/roster-baseline")
+      .then((r) => r.json())
+      .then((res) => {
+        setRosterBaseline(res.baseline ?? null);
+        setYahooSyncedAt(res.syncedAt ?? null);
+      })
+      .catch(() => {});
+  }
 
   useEffect(() => {
     fetch("/api/roster")
@@ -89,11 +109,37 @@ export default function Dashboard() {
       .catch(() => {
         // Non-fatal — dashboard still works from the static baseline.
       });
+
+    fetch("/api/yahoo/status")
+      .then((r) => r.json())
+      .then((res) => {
+        setYahooConnected(!!res.connected);
+        setYahooSyncedAt(res.syncedAt ?? null);
+      })
+      .catch(() => {});
+
+    refreshRosterBaseline();
+
+    // One-time status message from the OAuth callback redirect, if any.
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("yahoo_connected")) {
+      const syncErr = params.get("yahoo_sync_error");
+      setYahooStatusMessage(
+        syncErr
+          ? { type: "error", text: `Connected, but initial sync failed: ${syncErr}` }
+          : { type: "success", text: "Connected to Yahoo and synced." }
+      );
+    } else if (params.has("yahoo_error")) {
+      setYahooStatusMessage({ type: "error", text: params.get("yahoo_error") ?? "Yahoo connection failed" });
+    }
+    if (params.has("yahoo_connected") || params.has("yahoo_error")) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   const ownership = useMemo(
-    () => buildEffectiveOwnership(rosterOverrides as any),
-    [rosterOverrides]
+    () => buildEffectiveOwnership(rosterOverrides as any, rosterBaseline ? (rosterBaseline as any) : undefined),
+    [rosterOverrides, rosterBaseline]
   );
 
   async function handleOwnerChange(playerName: string, team: string | null) {
@@ -325,6 +371,16 @@ export default function Dashboard() {
           </p>
         </div>
       </header>
+
+      <YahooConnectBanner
+        connected={yahooConnected}
+        syncedAt={yahooSyncedAt}
+        statusMessage={yahooStatusMessage}
+        onSyncComplete={() => {
+          refreshRosterBaseline();
+          setYahooConnected(true);
+        }}
+      />
 
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex w-full overflow-x-auto rounded border border-rink-steel/50 sm:w-auto">
@@ -705,8 +761,7 @@ export default function Dashboard() {
       )}
 
       <footer className="mt-8 font-mono text-xs text-rink-ice/40">
-        Data: NHL stats API. Ownership starts from your league&rsquo;s draft-night Team
-        Comparison import, plus any add/drop edits made here &mdash; synced across
+        Data: NHL stats API. Ownership {yahooConnected ? "syncs live from Yahoo" : "starts from your league's draft-night Team Comparison import"}, plus any add/drop edits made here &mdash; synced across
         devices. Use the Owner dropdown on any player to update it.
       </footer>
     </main>

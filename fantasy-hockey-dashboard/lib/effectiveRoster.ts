@@ -1,4 +1,4 @@
-import { ROSTERS, YOUR_TEAM } from "./rosters";
+import { ROSTERS, YOUR_TEAM, RosteredPlayer } from "./rosters";
 import { normalizeName } from "./rosterLookup";
 import type { OverrideEntry } from "./rosterOverrides";
 
@@ -6,16 +6,21 @@ export type OwnershipEntry = { team: string | null; displayName: string };
 export type OwnershipMap = Map<string, OwnershipEntry>;
 
 /**
- * Merges the static draft-night baseline with live overrides into one
- * lookup: normalized player name -> {team, displayName}. Overrides always
- * win over baseline, including team:null (an explicit drop to free
- * agency), since that's the point of the overlay.
+ * Merges a roster baseline with live overrides into one lookup:
+ * normalized player name -> {team, displayName}. Overrides always win
+ * over baseline, including team:null (an explicit drop to free agency).
+ *
+ * `baseline` defaults to the static draft-night snapshot, but the caller
+ * can pass in a live-synced Yahoo roster snapshot instead (same shape) —
+ * everything downstream (League tab, Optimizer, Week strategy) is
+ * agnostic to which source it came from.
  */
 export function buildEffectiveOwnership(
-  overrides: Record<string, OverrideEntry>
+  overrides: Record<string, OverrideEntry>,
+  baseline: Record<string, RosteredPlayer[]> = ROSTERS
 ): OwnershipMap {
   const map: OwnershipMap = new Map();
-  for (const [team, players] of Object.entries(ROSTERS)) {
+  for (const [team, players] of Object.entries(baseline)) {
     for (const p of players) {
       map.set(normalizeName(p.name), { team, displayName: p.name });
     }
