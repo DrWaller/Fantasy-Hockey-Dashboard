@@ -31,6 +31,7 @@ export function getAuthorizationUrl(state: string): string {
     redirect_uri: getRedirectUri(),
     response_type: "code",
     language: "en-us",
+    scope: "fspt-r",
     state,
   });
   return `${AUTH_URL}?${params.toString()}`;
