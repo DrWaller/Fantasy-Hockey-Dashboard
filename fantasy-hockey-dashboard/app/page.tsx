@@ -14,6 +14,7 @@ import LeagueView from "@/components/LeagueView";
 import OptimizerView from "@/components/OptimizerView";
 import YahooConnectBanner from "@/components/YahooConnectBanner";
 import WeekStrategyView from "@/components/WeekStrategyView";
+import RadarView from "@/components/RadarView";
 import { allTeamNames, normalizeName } from "@/lib/rosterLookup";
 import { buildEffectiveOwnership, effectiveOwner, YOUR_TEAM } from "@/lib/effectiveRoster";
 
@@ -62,8 +63,9 @@ function zColor(z: number): string {
 
 export default function Dashboard() {
   const [tab, setTab] = useState<
-    "skaters" | "goalies" | "schedule" | "zerog" | "league" | "optimizer" | "week"
+    "skaters" | "goalies" | "schedule" | "zerog" | "league" | "optimizer" | "week" | "radar"
   >("skaters");
+  const isTableTab = tab === "skaters" || tab === "goalies";
   const [minGames, setMinGames] = useState(3);
   const [showOnly, setShowOnly] = useState<"all" | "targets">("targets");
   const [sortKey, setSortKey] = useState<string>("valueAboveReplacement");
@@ -192,7 +194,7 @@ export default function Dashboard() {
   // (minGames=0), independent of the Min GP control used elsewhere.
   useEffect(() => {
     if (
-      (tab !== "league" && tab !== "optimizer" && tab !== "week") ||
+      (tab !== "league" && tab !== "optimizer" && tab !== "week" && tab !== "radar") ||
       leagueSkaters ||
       leagueLoading
     )
@@ -385,7 +387,7 @@ export default function Dashboard() {
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex w-full overflow-x-auto rounded border border-rink-steel/50 sm:w-auto">
           {(
-            ["skaters", "goalies", "schedule", "zerog", "league", "optimizer", "week"] as const
+            ["skaters", "goalies", "schedule", "zerog", "league", "optimizer", "week", "radar"] as const
           ).map((t) => (
             <button
               key={t}
@@ -411,16 +413,14 @@ export default function Dashboard() {
                 ? "League"
                 : t === "optimizer"
                 ? "Optimizer"
+                : t === "radar"
+                ? "Radar"
                 : "Week"}
             </button>
           ))}
         </div>
 
-        {tab !== "schedule" &&
-          tab !== "zerog" &&
-          tab !== "league" &&
-          tab !== "optimizer" &&
-          tab !== "week" && (
+        {isTableTab && (
           <div className="flex items-center gap-2 font-mono text-sm">
             <label htmlFor="minGames" className="text-rink-ice/60">
               Min GP
@@ -436,7 +436,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && (
+        {isTableTab && (
           <div className="flex overflow-hidden rounded border border-rink-steel/50">
             {(["targets", "all"] as const).map((s) => (
               <button
@@ -459,7 +459,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && (
+        {isTableTab && (
           <button
             onClick={() => setWeightsOpen((o) => !o)}
             className="rounded border border-rink-steel/50 px-3 py-2 font-mono text-xs uppercase tracking-wide text-rink-ice/70 hover:text-rink-ice"
@@ -469,7 +469,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && weightsOpen && (
+      {isTableTab && weightsOpen && (
         <div className="mb-6 rounded border border-rink-steel/40 bg-rink-steel/10 p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-xs uppercase tracking-wide text-rink-ice/50">
@@ -594,6 +594,28 @@ export default function Dashboard() {
         </>
       )}
 
+      {tab === "radar" && (
+        <>
+          {leagueLoading && (
+            <p className="font-mono text-sm text-rink-ice/60">
+              Loading player stats&hellip; first load only.
+            </p>
+          )}
+          {leagueError && (
+            <p className="font-mono text-sm text-rink-line">
+              Couldn&rsquo;t load the radar charts: {leagueError}
+            </p>
+          )}
+          {!leagueLoading && !leagueError && leagueSkaters && leagueGoalies && (
+            <RadarView
+              rawSkaters={leagueSkaters}
+              rawGoalies={leagueGoalies}
+              ownership={ownership}
+            />
+          )}
+        </>
+      )}
+
       {tab === "week" && (
         <>
           {leagueLoading && (
@@ -616,16 +638,16 @@ export default function Dashboard() {
         </>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && loading && (
+      {isTableTab && loading && (
         <p className="font-mono text-sm text-rink-ice/60">Loading current NHL stats&hellip;</p>
       )}
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && error && (
+      {isTableTab && error && (
         <p className="font-mono text-sm text-rink-line">
           Couldn&rsquo;t load NHL data: {error}
         </p>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && !loading && !error && sorted.length > 0 && (
+      {isTableTab && !loading && !error && sorted.length > 0 && (
         <div className="overflow-x-auto rounded border border-rink-steel/40">
           <table className="w-full min-w-[900px] border-collapse font-mono text-sm">
             <thead>
@@ -748,7 +770,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {tab !== "schedule" && tab !== "zerog" && tab !== "league" && tab !== "optimizer" && tab !== "week" && !loading && !error && sorted.length === 0 && (
+      {isTableTab && !loading && !error && sorted.length === 0 && (
         <p className="font-mono text-sm text-rink-ice/60">
           No players match the current filters.
         </p>
