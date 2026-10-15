@@ -52,6 +52,7 @@ export type Filters = {
   search: string;
   statCols: boolean;
   hideInjured: boolean;
+  pinLY: boolean; // sort players who were Good+ last season to the top
   lines: string[]; // empty = any
   pps: string[]; // empty = any
 };
@@ -64,6 +65,7 @@ export const DEFAULT_FILTERS: Filters = {
   search: "",
   statCols: true,
   hideInjured: false,
+  pinLY: false,
   lines: [],
   pps: [],
 };
@@ -96,6 +98,43 @@ export function computeTiers(
   });
   return out;
 }
+
+/** 0..1 percentile of each player's VOR inside the pool (1 = best). */
+export function vorPercentiles(
+  rows: { playerId: number; valueAboveReplacement: number }[]
+): Map<number, number> {
+  const sorted = [...rows].sort((a, b) => b.valueAboveReplacement - a.valueAboveReplacement);
+  const n = sorted.length;
+  const out = new Map<number, number>();
+  sorted.forEach((r, i) => out.set(r.playerId, n > 1 ? 1 - i / (n - 1) : 1));
+  return out;
+}
+
+/**
+ * Tier from a blend of this period's standing and last season's. Both are
+ * turned into VOR percentiles first (scale-free, so a 7-game window and a
+ * full season can be mixed), then blended: (1-w) * current + w * lastSeason.
+ * Anyone without a qualifying last season (rookies, too few games) is judged
+ * on the current period alone rather than being penalised for it.
+ */
+export function computeBlendedTiers(
+  rows: { playerId: number; valueAboveReplacement: number }[],
+  lastSeasonPct: Map<number, number> | null,
+  lastSeasonWeight: number,
+  starters: number
+): Map<number, TierName> {
+  const cur = vorPercentiles(rows);
+  const blended = rows.map((r) => {
+    const c = cur.get(r.playerId) ?? 0;
+    const l = lastSeasonPct?.get(r.playerId);
+    const b = l == null || lastSeasonWeight <= 0 ? c : (1 - lastSeasonWeight) * c + lastSeasonWeight * l;
+    return { playerId: r.playerId, valueAboveReplacement: b };
+  });
+  return computeTiers(blended, starters);
+}
+
+export const isGoodPlus = (t: TierName | null | undefined) =>
+  t === "Superstar" || t === "Elite" || t === "Good";
 
 export function starterCount(kind: "skaters" | "goalies"): number {
   const s = leagueWideSlots();

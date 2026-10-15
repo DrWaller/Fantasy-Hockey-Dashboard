@@ -97,6 +97,9 @@ export default function TableFilters({
   injuriesState,
   shown,
   total,
+  lyWeight,
+  onLyWeight,
+  lyState,
 }: {
   kind: "skaters" | "goalies";
   period: Period;
@@ -112,6 +115,9 @@ export default function TableFilters({
   injuriesState: "loading" | "ok" | "unavailable";
   shown: number;
   total: number;
+  lyWeight: number;
+  onLyWeight: (w: number) => void;
+  lyState: "loading" | "ok" | "unavailable" | "off";
 }) {
   const set = (patch: Partial<Filters>) => onFilters({ ...filters, ...patch });
   const toggleIn = (arr: string[], v: string) =>
@@ -183,7 +189,7 @@ export default function TableFilters({
             value={filters.tier}
             onChange={(e) => set({ tier: e.target.value as Filters["tier"] })}
             className={selectCls}
-            title="Superstar = top 8% of league starter slots by VOR, Elite = next 17%, Good = next 35%, Depth = rest of the starters, Replacement = below the starter line"
+            title="Ranked by a blend of this period and last season (see the Last season counts slider). Superstar = top 8% of league starter slots, Elite = next 17%, Good = next 35%, Depth = rest of the starters, Replacement = below the starter line"
           >
             <option value="">All tiers</option>
             {TIER_NAMES.map((t) => (
@@ -192,6 +198,35 @@ export default function TableFilters({
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label
+            className={labelCls}
+            title="How much last season counts toward the tier. Both seasons are turned into VOR percentiles and blended; players with no qualifying last season are judged on the current period only."
+          >
+            Last season counts{" "}
+            <span className="text-rink-gold">
+              {lyState === "ok" ? `${Math.round(lyWeight * 100)}%` : lyState === "loading" ? "…" : "n/a"}
+            </span>
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={10}
+            value={Math.round(lyWeight * 100)}
+            onChange={(e) => onLyWeight(Number(e.target.value) / 100)}
+            disabled={lyState !== "ok"}
+            className="w-32 accent-rink-line disabled:opacity-40"
+            title={
+              lyState === "off"
+                ? "Already showing last season's stats, so there's nothing to blend"
+                : lyState === "unavailable"
+                ? "Last season's stats couldn't be loaded"
+                : "0% = this period only, 100% = last season only"
+            }
+          />
         </div>
 
         <div>
@@ -228,6 +263,13 @@ export default function TableFilters({
             label="Stat columns"
             onClick={() => set({ statCols: !filters.statCols })}
             title="Show each league category's raw stat"
+          />
+          <Toggle
+            on={filters.pinLY}
+            label="Pin last yr Good+"
+            onClick={() => set({ pinLY: !filters.pinLY })}
+            disabled={lyState !== "ok"}
+            title="Sort anyone who was Good tier or better last season to the top of the list"
           />
           <Toggle
             on={filters.hideInjured}

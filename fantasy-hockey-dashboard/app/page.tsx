@@ -20,6 +20,9 @@ import {
   DEFAULT_FILTERS,
   TIER_STYLE,
   computeTiers,
+  computeBlendedTiers,
+  vorPercentiles,
+  isGoodPlus,
   latestTeam,
   passesFilters,
   starterCount,
@@ -28,6 +31,7 @@ import {
 } from "@/lib/tableFilters";
 import { lookupRole, type RolesPayload } from "@/lib/roles";
 import type { InjuriesPayload } from "@/lib/injuries";
+import { previousSeasonId } from "@/lib/nhlApi";
 import { allTeamNames, normalizeName } from "@/lib/rosterLookup";
 import { buildEffectiveOwnership, effectiveOwner, YOUR_TEAM } from "@/lib/effectiveRoster";
 
@@ -93,6 +97,12 @@ export default function Dashboard() {
   const [rolesRequested, setRolesRequested] = useState(false);
   const [injuriesData, setInjuriesData] = useState<InjuriesPayload | null>(null);
   const [injuriesRequested, setInjuriesRequested] = useState(false);
+  // Last season's full-season stats, used to temper the tier and to flag
+  // players who were Good+ last year.
+  const [lyWeight, setLyWeight] = useState(0.4);
+  const [lyRaw, setLyRaw] = useState<{ skaters: any[]; goalies: any[] } | null>(null);
+  const [lyRequested, setLyRequested] = useState(false);
+  const [lyFailed, setLyFailed] = useState(false);
   // Manual per-player VOR nudges — the in-season equivalent of a scouting
   // "boost/bust" call. Session-only for now (resets on page reload); ask
   // for persistent storage if this proves worth keeping across visits.
@@ -297,6 +307,23 @@ export default function Dashboard() {
     }
   }, [isTableTab, rolesRequested, injuriesRequested]);
 
+  // Last season, fetched once. Minimum games keep tiny samples (a 3-game
+  // call-up) from ranking as last year's stars.
+  useEffect(() => {
+    if (!isTableTab || lyRequested) return;
+    setLyRequested(true);
+    const prev = previousSeasonId();
+    Promise.all([
+      fetch(`/api/rankings?season=${prev}&minGames=20`).then((r) => r.json()),
+      fetch(`/api/goalie-rankings?season=${prev}&minGames=10`).then((r) => r.json()),
+    ])
+      .then(([sk, go]) => {
+        if (sk.error || go.error) throw new Error(sk.error || go.error);
+        setLyRaw({ skaters: sk.players, goalies: go.players });
+      })
+      .catch(() => setLyFailed(true));
+  }, [isTableTab, lyRequested]);
+
   // Zero-G targets — lazy, one-time fetch per visit to the tab. This
   // endpoint does real work server-side (scans recent boxscores across
   // the league), so it's cached 12h server-side and not refetched here
@@ -427,22 +454,57 @@ export default function Dashboard() {
 
   // Adds the derived fields the filters and extra columns need: current NHL
   // team, tier (by VOR rank in the current pool), role, injury, games ahead.
+  // Last season scored the same way as this season (same category weights),
+  // giving each player's last-year VOR percentile and pure last-year tier.
+  // Skipped when the table is already showing last season's stats.
+  const lyScored = useMemo(() => {
+    if (!lyRaw || seasonFallback) return null;
+    const isSk = tab === "skaters";
+    const scored: any[] = isSk ? scoreSkaters(lyRaw.skaters, weights) : scoreGoalies(lyRaw.goalies, weights);
+    if (scored.length === 0) return null;
+    const { replacementScore } = isSk
+      ? estimateReplacementLevel(scored as any)
+      : estimateGoalieReplacementLevel(scored as any);
+    const vorRows = scored.map((p) => ({
+      playerId: p.playerId as number,
+      valueAboveReplacement: p.overallScore - replacementScore,
+    }));
+    return {
+      pct: vorPercentiles(vorRows),
+      tiers: computeTiers(vorRows, starterCount(isSk ? "skaters" : "goalies")),
+    };
+  }, [lyRaw, seasonFallback, tab, weights]);
+
+  const lyState: "loading" | "ok" | "unavailable" | "off" = seasonFallback
+    ? "off"
+    : lyScored
+    ? "ok"
+    : lyFailed
+    ? "unavailable"
+    : "loading";
+
   const decorated = useMemo(() => {
     if (!rows) return [];
     const kind = tab === "skaters" ? "skaters" : "goalies";
-    const tiers = computeTiers(rows as any, starterCount(kind));
+    const tiers = computeBlendedTiers(
+      rows as any,
+      lyScored?.pct ?? null,
+      lyWeight,
+      starterCount(kind)
+    );
     return rows.map((r: any) => {
       const tri = latestTeam(r.team);
       return {
         ...r,
         tri,
         tier: tiers.get(r.playerId) ?? "Replacement",
+        lyTier: lyScored?.tiers.get(r.playerId) ?? null,
         role: kind === "skaters" ? lookupRole(rolesData?.roles, tri, r.name) : null,
         injury: injuriesData?.injuries?.[normalizeName(r.name)] ?? null,
         games7: scheduleByTri.get(tri)?.games ?? null,
       };
     });
-  }, [rows, tab, rolesData, injuriesData, scheduleByTri]);
+  }, [rows, tab, rolesData, injuriesData, scheduleByTri, lyScored, lyWeight]);
 
   const teamOptions = useMemo(
     () => Array.from(new Set(decorated.map((r: any) => r.tri).filter(Boolean))).sort() as string[],
@@ -470,8 +532,26 @@ export default function Dashboard() {
           : r[sortKey],
     }));
     withKey.sort((a, b) => (sortDir === "desc" ? b.key - a.key : a.key - b.key));
-    return withKey.map((w) => w.row);
-  }, [decorated, tab, showOnly, filters, sortKey, sortDir, scheduleForFilter, rolesState, injuriesState]);
+    const ordered = withKey.map((w) => w.row);
+    if (filters.pinLY && lyScored) {
+      // Stable partition: last year's Good+ first, each group keeps its sort.
+      return [
+        ...ordered.filter((r: any) => isGoodPlus(r.lyTier)),
+        ...ordered.filter((r: any) => !isGoodPlus(r.lyTier)),
+      ];
+    }
+    return ordered;
+  }, [decorated, tab, showOnly, filters, sortKey, sortDir, scheduleForFilter, rolesState, injuriesState, lyScored]);
+
+  // Players who were Good+ last season and still match the current filters
+  // (with "Free agents" on, that's the ones you can actually pick up).
+  const lyGoodPlus = useMemo(
+    () =>
+      sorted
+        .filter((r: any) => isGoodPlus(r.lyTier))
+        .sort((a: any, b: any) => (lyScored?.pct.get(b.playerId) ?? 0) - (lyScored?.pct.get(a.playerId) ?? 0)),
+    [sorted, lyScored]
+  );
 
   const poolSize = useMemo(
     () => (showOnly === "targets" ? decorated.filter((r: any) => !r.rostered).length : decorated.length),
@@ -664,6 +744,9 @@ export default function Dashboard() {
           injuriesState={injuriesState}
           shown={sorted.length}
           total={poolSize}
+          lyWeight={lyWeight}
+          onLyWeight={setLyWeight}
+          lyState={lyState}
         />
       )}
 
@@ -808,6 +891,44 @@ export default function Dashboard() {
         </p>
       )}
 
+      {isTableTab && !loading && !error && lyGoodPlus.length > 0 && (
+        <div className="mb-4 rounded border border-rink-gold/40 bg-rink-gold/5 p-3">
+          <p className="mb-2 font-mono text-xs uppercase tracking-wide text-rink-gold">
+            Good tier or better last season &middot; {lyGoodPlus.length}
+            {showOnly === "targets" ? " available" : ""}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {lyGoodPlus.slice(0, 30).map((r: any) => (
+              <span
+                key={r.playerId}
+                className="flex items-center gap-1.5 rounded border border-rink-steel/40 bg-rink-board px-2 py-1 font-mono text-xs text-rink-ice"
+                title={`Last season: ${r.lyTier} · now: ${r.tier}${r.owner ? ` · owned by ${r.owner}` : " · free agent"}`}
+              >
+                {r.name}
+                <span
+                  className="rounded px-1 text-[10px] font-semibold uppercase"
+                  style={{ background: TIER_STYLE[r.lyTier as keyof typeof TIER_STYLE].bg, color: TIER_STYLE[r.lyTier as keyof typeof TIER_STYLE].fg }}
+                >
+                  {r.lyTier}
+                </span>
+                <span className="text-rink-ice/40">&rarr;</span>
+                <span
+                  className="rounded px-1 text-[10px] font-semibold uppercase"
+                  style={{ background: TIER_STYLE[r.tier as keyof typeof TIER_STYLE].bg, color: TIER_STYLE[r.tier as keyof typeof TIER_STYLE].fg }}
+                >
+                  {r.tier}
+                </span>
+              </span>
+            ))}
+            {lyGoodPlus.length > 30 && (
+              <span className="px-1 py-1 font-mono text-xs text-rink-ice/40">
+                +{lyGoodPlus.length - 30} more
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {isTableTab && !loading && !error && sorted.length > 0 && (
         <div className="overflow-x-auto rounded border border-rink-steel/40">
           <table className="w-full min-w-[900px] border-collapse font-mono text-sm">
@@ -824,6 +945,11 @@ export default function Dashboard() {
                 >
                   Tier
                 </th>
+                {lyState === "ok" && (
+                  <th className="px-3 py-2" title="Tier last season, on full-season stats (min 20 GP skaters / 10 GP goalies)">
+                    LY
+                  </th>
+                )}
                 {tab === "skaters" && rolesState === "ok" && (
                   <>
                     <th className="px-3 py-2" title="Forward line (L1-L4) or defence pair (D1-D3)">
@@ -912,6 +1038,20 @@ export default function Dashboard() {
                       {r.tier}
                     </span>
                   </td>
+                  {lyState === "ok" && (
+                    <td className="px-3 py-1.5">
+                      {r.lyTier ? (
+                        <span
+                          className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                          style={{ background: TIER_STYLE[r.lyTier as keyof typeof TIER_STYLE].bg, color: TIER_STYLE[r.lyTier as keyof typeof TIER_STYLE].fg }}
+                        >
+                          {r.lyTier}
+                        </span>
+                      ) : (
+                        <span className="text-rink-ice/30">—</span>
+                      )}
+                    </td>
+                  )}
                   {tab === "skaters" && rolesState === "ok" && (
                     <>
                       <td
