@@ -15,6 +15,7 @@ import OptimizerView from "@/components/OptimizerView";
 import YahooConnectBanner from "@/components/YahooConnectBanner";
 import WeekStrategyView from "@/components/WeekStrategyView";
 import RadarView from "@/components/RadarView";
+import MakeupView from "@/components/MakeupView";
 import TableFilters from "@/components/TableFilters";
 import {
   DEFAULT_FILTERS,
@@ -80,7 +81,7 @@ function zColor(z: number): string {
 
 export default function Dashboard() {
   const [tab, setTab] = useState<
-    "skaters" | "goalies" | "schedule" | "zerog" | "league" | "optimizer" | "week" | "radar"
+    "skaters" | "goalies" | "schedule" | "zerog" | "league" | "optimizer" | "week" | "radar" | "makeup"
   >("skaters");
   const isTableTab = tab === "skaters" || tab === "goalies";
   const [minGames, setMinGames] = useState(3);
@@ -238,12 +239,13 @@ export default function Dashboard() {
   const [leagueGoalies, setLeagueGoalies] = useState<any[] | null>(null);
   const [leagueError, setLeagueError] = useState<string | null>(null);
   const [leagueLoading, setLeagueLoading] = useState(false);
+  const [leagueFallback, setLeagueFallback] = useState(false);
 
   // League tab needs every rostered player regardless of games played
   // (minGames=0), independent of the Min GP control used elsewhere.
   useEffect(() => {
     if (
-      (tab !== "league" && tab !== "optimizer" && tab !== "week" && tab !== "radar") ||
+      (tab !== "league" && tab !== "optimizer" && tab !== "week" && tab !== "radar" && tab !== "makeup") ||
       leagueSkaters ||
       leagueLoading
     )
@@ -259,6 +261,7 @@ export default function Dashboard() {
         if (goalieRes.error) throw new Error(goalieRes.error);
         setLeagueSkaters(skaterRes.players);
         setLeagueGoalies(goalieRes.players);
+        setLeagueFallback(!!skaterRes.fallback);
       })
       .catch((e) => setLeagueError(e.message))
       .finally(() => setLeagueLoading(false));
@@ -290,8 +293,8 @@ export default function Dashboard() {
   // endpoints always answer 200 and report failure in the body, so a dead
   // source just switches its controls off.
   useEffect(() => {
-    if (!isTableTab) return;
-    if (!rolesRequested) {
+    if (!isTableTab && tab !== "makeup") return;
+    if (!rolesRequested && isTableTab) {
       setRolesRequested(true);
       fetch("/api/roles")
         .then((r) => r.json())
@@ -305,12 +308,12 @@ export default function Dashboard() {
         .then(setInjuriesData)
         .catch(() => setInjuriesData({ ok: false, injuries: {} }));
     }
-  }, [isTableTab, rolesRequested, injuriesRequested]);
+  }, [isTableTab, tab, rolesRequested, injuriesRequested]);
 
   // Last season, fetched once. Minimum games keep tiny samples (a 3-game
   // call-up) from ranking as last year's stars.
   useEffect(() => {
-    if (!isTableTab || lyRequested) return;
+    if ((!isTableTab && tab !== "makeup") || lyRequested) return;
     setLyRequested(true);
     const prev = previousSeasonId();
     Promise.all([
@@ -322,7 +325,7 @@ export default function Dashboard() {
         setLyRaw({ skaters: sk.players, goalies: go.players });
       })
       .catch(() => setLyFailed(true));
-  }, [isTableTab, lyRequested]);
+  }, [isTableTab, tab, lyRequested]);
 
   // Zero-G targets — lazy, one-time fetch per visit to the tab. This
   // endpoint does real work server-side (scans recent boxscores across
@@ -609,7 +612,7 @@ export default function Dashboard() {
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex w-full overflow-x-auto rounded border border-rink-steel/50 sm:w-auto">
           {(
-            ["skaters", "goalies", "schedule", "zerog", "league", "optimizer", "week", "radar"] as const
+            ["skaters", "goalies", "schedule", "zerog", "league", "optimizer", "week", "radar", "makeup"] as const
           ).map((t) => (
             <button
               key={t}
@@ -637,6 +640,8 @@ export default function Dashboard() {
                 ? "Optimizer"
                 : t === "radar"
                 ? "Radar"
+                : t === "makeup"
+                ? "Makeup"
                 : "Week"}
             </button>
           ))}
@@ -855,6 +860,33 @@ export default function Dashboard() {
               rawSkaters={leagueSkaters}
               rawGoalies={leagueGoalies}
               ownership={ownership}
+            />
+          )}
+        </>
+      )}
+
+      {tab === "makeup" && (
+        <>
+          {leagueLoading && (
+            <p className="font-mono text-sm text-rink-ice/60">
+              Loading player stats&hellip; first load only.
+            </p>
+          )}
+          {leagueError && (
+            <p className="font-mono text-sm text-rink-line">
+              Couldn&rsquo;t load team makeup: {leagueError}
+            </p>
+          )}
+          {!leagueLoading && !leagueError && leagueSkaters && leagueGoalies && (
+            <MakeupView
+              rawSkaters={leagueSkaters}
+              rawGoalies={leagueGoalies}
+              lySkaters={leagueFallback ? null : lyRaw?.skaters ?? null}
+              lyGoalies={leagueFallback ? null : lyRaw?.goalies ?? null}
+              weights={weights}
+              lyWeight={lyWeight}
+              ownership={ownership}
+              injuries={injuriesData?.ok ? injuriesData.injuries : null}
             />
           )}
         </>

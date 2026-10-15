@@ -84,18 +84,19 @@ export function latestTeam(teamAbbrevs: string | null | undefined): string {
  * 35%, Depth = rest of the starters, Replacement = everyone below the
  * starter line. With ~156 skater starters that's 12 / 27 / 55 / 62 players.
  */
+/** Tier for a given rank (0 = best) when the league has `starters` starter slots. */
+export function tierForRank(rank: number, starters: number): TierName {
+  const cut = [0.08, 0.25, 0.6, 1].map((f) => Math.round(starters * f));
+  return rank < cut[0] ? "Superstar" : rank < cut[1] ? "Elite" : rank < cut[2] ? "Good" : rank < cut[3] ? "Depth" : "Replacement";
+}
+
 export function computeTiers(
   rows: { playerId: number; valueAboveReplacement: number }[],
   starters: number
 ): Map<number, TierName> {
   const sorted = [...rows].sort((a, b) => b.valueAboveReplacement - a.valueAboveReplacement);
-  const cut = [0.08, 0.25, 0.6, 1].map((f) => Math.round(starters * f));
   const out = new Map<number, TierName>();
-  sorted.forEach((r, i) => {
-    const tier: TierName =
-      i < cut[0] ? "Superstar" : i < cut[1] ? "Elite" : i < cut[2] ? "Good" : i < cut[3] ? "Depth" : "Replacement";
-    out.set(r.playerId, tier);
-  });
+  sorted.forEach((r, i) => out.set(r.playerId, tierForRank(i, starters)));
   return out;
 }
 
