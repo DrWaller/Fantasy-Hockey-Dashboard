@@ -27,13 +27,27 @@ export function previousSeasonId(): string {
   return `${startYear}${startYear + 1}`;
 }
 
+// Eastern-time calendar date (YYYY-MM-DD), `daysBack` days before today.
+// The NHL schedules by Eastern date, so "last 7 days" is counted in ET.
+export function etDateDaysAgo(daysBack: number): string {
+  const todayET = new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/New_York",
+  });
+  const t = new Date(`${todayET}T00:00:00Z`).getTime() - daysBack * 86400000;
+  return new Date(t).toISOString().slice(0, 10);
+}
+
 async function fetchReport(
   report: "skater/summary" | "skater/realtime" | "goalie/summary",
   seasonId: string,
-  gameTypeId = 2
+  gameTypeId = 2,
+  sinceDate?: string
 ) {
+  // With a sinceDate the stats API sums only games on/after that date, which
+  // is how the L7 / L15 / L30 windows are built.
   const cayenneExp = encodeURIComponent(
-    `gameTypeId=${gameTypeId} and seasonId=${seasonId}`
+    `gameTypeId=${gameTypeId} and seasonId=${seasonId}` +
+      (sinceDate ? ` and gameDate>="${sinceDate}"` : "")
   );
   const sortField =
     report === "goalie/summary"
@@ -62,25 +76,25 @@ async function fetchReport(
   return json.data as Record<string, unknown>[];
 }
 
-export async function getSkaterSummary(seasonId: string) {
-  return fetchReport("skater/summary", seasonId);
+export async function getSkaterSummary(seasonId: string, sinceDate?: string) {
+  return fetchReport("skater/summary", seasonId, 2, sinceDate);
 }
 
-export async function getSkaterRealtime(seasonId: string) {
+export async function getSkaterRealtime(seasonId: string, sinceDate?: string) {
   // hits, blockedShots, giveaways, takeaways, missedShots
-  return fetchReport("skater/realtime", seasonId);
+  return fetchReport("skater/realtime", seasonId, 2, sinceDate);
 }
 
-export async function getGoalieSummary(seasonId: string) {
-  return fetchReport("goalie/summary", seasonId);
+export async function getGoalieSummary(seasonId: string, sinceDate?: string) {
+  return fetchReport("goalie/summary", seasonId, 2, sinceDate);
 }
 
 // Joins skater/summary + skater/realtime on playerId into one flat record
 // per skater, which is what the scoring engine expects.
-export async function getJoinedSkaters(seasonId: string) {
+export async function getJoinedSkaters(seasonId: string, sinceDate?: string) {
   const [summary, realtime] = await Promise.all([
-    getSkaterSummary(seasonId),
-    getSkaterRealtime(seasonId),
+    getSkaterSummary(seasonId, sinceDate),
+    getSkaterRealtime(seasonId, sinceDate),
   ]);
 
   const realtimeById = new Map(
@@ -101,15 +115,20 @@ export async function getJoinedSkaters(seasonId: string) {
       ppPoints: s.ppPoints,
       shPoints: s.shPoints,
       shots: s.shots,
-      shootingPct: s.shootingPct,
+      // Recomputed from goals/shots so a date window is always self-consistent
+      // (falls back to the API's own figure if the counts are missing).
+      shootingPct:
+        Number(s.shots) > 0 && s.goals != null
+          ? Number(s.goals) / Number(s.shots)
+          : s.shootingPct ?? 0,
       hits: rt.hits ?? 0,
       blockedShots: rt.blockedShots ?? 0,
     };
   });
 }
 
-export async function getGoalies(seasonId: string) {
-  const goalies = await getGoalieSummary(seasonId);
+export async function getGoalies(seasonId: string, sinceDate?: string) {
+  const goalies = await getGoalieSummary(seasonId, sinceDate);
   return goalies.map((g) => ({
     playerId: g.playerId,
     name: g.goalieFullName,

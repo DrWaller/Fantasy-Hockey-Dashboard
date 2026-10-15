@@ -15,6 +15,19 @@ import OptimizerView from "@/components/OptimizerView";
 import YahooConnectBanner from "@/components/YahooConnectBanner";
 import WeekStrategyView from "@/components/WeekStrategyView";
 import RadarView from "@/components/RadarView";
+import TableFilters from "@/components/TableFilters";
+import {
+  DEFAULT_FILTERS,
+  TIER_STYLE,
+  computeTiers,
+  latestTeam,
+  passesFilters,
+  starterCount,
+  type Filters,
+  type Period,
+} from "@/lib/tableFilters";
+import { lookupRole, type RolesPayload } from "@/lib/roles";
+import type { InjuriesPayload } from "@/lib/injuries";
 import { allTeamNames, normalizeName } from "@/lib/rosterLookup";
 import { buildEffectiveOwnership, effectiveOwner, YOUR_TEAM } from "@/lib/effectiveRoster";
 
@@ -72,6 +85,14 @@ export default function Dashboard() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [weights, setWeights] = useState<Record<string, number>>(defaultWeights());
   const [weightsOpen, setWeightsOpen] = useState(false);
+  // Best-Available-style controls: date window, filters and role search.
+  const [period, setPeriod] = useState<Period>("season");
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [seasonFallback, setSeasonFallback] = useState(false);
+  const [rolesData, setRolesData] = useState<RolesPayload | null>(null);
+  const [rolesRequested, setRolesRequested] = useState(false);
+  const [injuriesData, setInjuriesData] = useState<InjuriesPayload | null>(null);
+  const [injuriesRequested, setInjuriesRequested] = useState(false);
   // Manual per-player VOR nudges — the in-season equivalent of a scouting
   // "boost/bust" call. Session-only for now (resets on page reload); ask
   // for persistent storage if this proves worth keeping across visits.
@@ -236,7 +257,12 @@ export default function Dashboard() {
   // Schedule barely changes day to day, so fetch it once, lazily, the
   // first time the Schedule tab is opened rather than on every load.
   useEffect(() => {
-    if ((tab !== "schedule" && tab !== "optimizer") || scheduleData || scheduleLoading) return;
+    if (
+      (tab !== "schedule" && tab !== "optimizer" && !isTableTab) ||
+      scheduleData ||
+      scheduleLoading
+    )
+      return;
     setScheduleLoading(true);
     setScheduleError(null);
     fetch("/api/schedule")
@@ -247,7 +273,29 @@ export default function Dashboard() {
       })
       .catch((e) => setScheduleError(e.message))
       .finally(() => setScheduleLoading(false));
-  }, [tab, scheduleData, scheduleLoading]);
+  }, [tab, isTableTab, scheduleData, scheduleLoading]);
+
+  // Line combinations (Daily Faceoff, ice-time fallback) and the injury
+  // report: fetched once, lazily, the first time a table tab opens. Both
+  // endpoints always answer 200 and report failure in the body, so a dead
+  // source just switches its controls off.
+  useEffect(() => {
+    if (!isTableTab) return;
+    if (!rolesRequested) {
+      setRolesRequested(true);
+      fetch("/api/roles")
+        .then((r) => r.json())
+        .then(setRolesData)
+        .catch(() => setRolesData({ ok: false, roles: {}, teamsOk: [], teamsFailed: [], inferredFrom: false, updatedAt: null }));
+    }
+    if (!injuriesRequested) {
+      setInjuriesRequested(true);
+      fetch("/api/injuries")
+        .then((r) => r.json())
+        .then(setInjuriesData)
+        .catch(() => setInjuriesData({ ok: false, injuries: {} }));
+    }
+  }, [isTableTab, rolesRequested, injuriesRequested]);
 
   // Zero-G targets — lazy, one-time fetch per visit to the tab. This
   // endpoint does real work server-side (scans recent boxscores across
@@ -267,16 +315,19 @@ export default function Dashboard() {
       .finally(() => setZeroGLoading(false));
   }, [tab, zeroGData, zeroGLoading]);
 
-  // Only refetches from the NHL API when minGames changes — weight-slider
-  // tweaks are re-scored entirely client-side, no network round trip.
+  // Only refetches from the NHL API when minGames or the period changes —
+  // weight-slider tweaks are re-scored entirely client-side, no network
+  // round trip.
   useEffect(() => {
     setLoading(true);
     setError(null);
+    const days = period === "l7" ? 7 : period === "l15" ? 15 : period === "l30" ? 30 : 0;
+    const daysQ = days ? `&days=${days}` : "";
     Promise.all([
-      fetch(`/api/rankings?minGames=${minGames}`).then((r) => r.json()),
-      fetch(`/api/goalie-rankings?minGames=${Math.max(1, Math.min(minGames, 3))}`).then((r) =>
-        r.json()
-      ),
+      fetch(`/api/rankings?minGames=${minGames}${daysQ}`).then((r) => r.json()),
+      fetch(
+        `/api/goalie-rankings?minGames=${Math.max(1, Math.min(minGames, 3))}${daysQ}`
+      ).then((r) => r.json()),
     ])
       .then(([skaterRes, goalieRes]) => {
         if (skaterRes.error) throw new Error(skaterRes.error);
@@ -284,10 +335,11 @@ export default function Dashboard() {
         setRawSkaters(skaterRes.players);
         setRawGoalies(goalieRes.players);
         setSeason(skaterRes.season);
+        setSeasonFallback(!!skaterRes.fallback);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [minGames]);
+  }, [minGames, period]);
 
   const scoredSkaters = useMemo(() => {
     if (!rawSkaters) return null;
@@ -303,6 +355,9 @@ export default function Dashboard() {
           rostered: owner !== null, // real roster data, not model-estimated
           manualAdjustment: adj,
           valueAboveReplacement: p.overallScore - replacementScore + adj,
+          vorPerGame:
+            (p.overallScore - replacementScore + adj) /
+            Math.max(1, Number((p as any).gamesPlayed) || 0),
           replacementPlayerName: (replacementPlayer as any)?.name ?? null,
         };
       })
@@ -325,6 +380,9 @@ export default function Dashboard() {
           rostered: owner !== null, // real roster data, not model-estimated
           manualAdjustment: adj,
           valueAboveReplacement: g.overallScore - replacementScore + adj,
+          vorPerGame:
+            (g.overallScore - replacementScore + adj) /
+            Math.max(1, Number((g as any).gamesPlayed) || 0),
           replacementPlayerName: (replacementPlayer as any)?.name ?? null,
         };
       })
@@ -343,10 +401,65 @@ export default function Dashboard() {
   const categories = tab === "skaters" ? SKATER_CATEGORIES : GOALIE_CATEGORIES;
   const rows = tab === "skaters" ? scoredSkaters : scoredGoalies;
 
-  const sorted = useMemo(() => {
+  // Schedule lookup for the Plays-on filter and the next-7-days games column.
+  const scheduleByTri = useMemo(() => {
+    const m = new Map<string, { playsOn: Record<string, boolean>; games: number }>();
+    for (const r of scheduleData?.grid?.rows ?? []) {
+      m.set(r.team, { playsOn: r.playsOn, games: r.gamesThisWeek });
+    }
+    return m;
+  }, [scheduleData]);
+  const scheduleForFilter = useMemo(() => {
+    if (scheduleByTri.size === 0) return null;
+    return new Map(Array.from(scheduleByTri.entries()).map(([k, v]) => [k, v.playsOn] as const));
+  }, [scheduleByTri]);
+
+  const rolesState: "loading" | "ok" | "unavailable" = !rolesData
+    ? "loading"
+    : rolesData.ok
+    ? "ok"
+    : "unavailable";
+  const injuriesState: "loading" | "ok" | "unavailable" = !injuriesData
+    ? "loading"
+    : injuriesData.ok
+    ? "ok"
+    : "unavailable";
+
+  // Adds the derived fields the filters and extra columns need: current NHL
+  // team, tier (by VOR rank in the current pool), role, injury, games ahead.
+  const decorated = useMemo(() => {
     if (!rows) return [];
-    const filtered =
-      showOnly === "targets" ? rows.filter((r: any) => !r.rostered) : rows;
+    const kind = tab === "skaters" ? "skaters" : "goalies";
+    const tiers = computeTiers(rows as any, starterCount(kind));
+    return rows.map((r: any) => {
+      const tri = latestTeam(r.team);
+      return {
+        ...r,
+        tri,
+        tier: tiers.get(r.playerId) ?? "Replacement",
+        role: kind === "skaters" ? lookupRole(rolesData?.roles, tri, r.name) : null,
+        injury: injuriesData?.injuries?.[normalizeName(r.name)] ?? null,
+        games7: scheduleByTri.get(tri)?.games ?? null,
+      };
+    });
+  }, [rows, tab, rolesData, injuriesData, scheduleByTri]);
+
+  const teamOptions = useMemo(
+    () => Array.from(new Set(decorated.map((r: any) => r.tri).filter(Boolean))).sort() as string[],
+    [decorated]
+  );
+
+  const sorted = useMemo(() => {
+    const kind = tab === "skaters" ? "skaters" : "goalies";
+    const ctx = {
+      kind,
+      schedule: scheduleForFilter,
+      rolesAvailable: rolesState === "ok",
+      injuriesAvailable: injuriesState === "ok",
+    } as const;
+    const filtered = decorated
+      .filter((r: any) => (showOnly === "targets" ? !r.rostered : true))
+      .filter((r: any) => passesFilters(r, filters, ctx));
     const withKey = filtered.map((r: any) => ({
       row: r,
       key:
@@ -358,7 +471,17 @@ export default function Dashboard() {
     }));
     withKey.sort((a, b) => (sortDir === "desc" ? b.key - a.key : a.key - b.key));
     return withKey.map((w) => w.row);
-  }, [rows, showOnly, sortKey, sortDir]);
+  }, [decorated, tab, showOnly, filters, sortKey, sortDir, scheduleForFilter, rolesState, injuriesState]);
+
+  const poolSize = useMemo(
+    () => (showOnly === "targets" ? decorated.filter((r: any) => !r.rostered).length : decorated.length),
+    [decorated, showOnly]
+  );
+
+  function handleSortPreset(key: "valueAboveReplacement" | "vorPerGame") {
+    setSortKey(key);
+    setSortDir("desc");
+  }
 
   function handleSort(key: string) {
     if (sortKey === key) {
@@ -388,6 +511,7 @@ export default function Dashboard() {
           <p className="mt-1 font-mono text-sm text-rink-ice/60">
             12-team head-to-head categories &middot; keeper &middot; ranked by value above replacement
             {season && <> &middot; {season.slice(0, 4)}-{season.slice(6)} season</>}
+            {period !== "season" && <> &middot; last {period.slice(1)} days</>}
           </p>
         </div>
       </header>
@@ -522,6 +646,25 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+      )}
+
+      {isTableTab && (
+        <TableFilters
+          kind={tab === "skaters" ? "skaters" : "goalies"}
+          period={period}
+          onPeriod={setPeriod}
+          periodsDisabled={seasonFallback && period === "season"}
+          sortKey={sortKey}
+          onSortPreset={handleSortPreset}
+          filters={filters}
+          onFilters={setFilters}
+          teams={teamOptions}
+          days={scheduleData?.grid?.days ?? []}
+          rolesState={rolesState}
+          injuriesState={injuriesState}
+          shown={sorted.length}
+          total={poolSize}
+        />
       )}
 
       {tab === "schedule" && (
@@ -675,8 +818,28 @@ export default function Dashboard() {
                 {tab === "skaters" && <th className="px-3 py-2">Pos</th>}
                 <th className="px-3 py-2">Tm</th>
                 <th className="px-3 py-2">Owner</th>
+                <th
+                  className="px-3 py-2"
+                  title="Tier by VOR rank in the current period, scaled to league starter slots"
+                >
+                  Tier
+                </th>
+                {tab === "skaters" && rolesState === "ok" && (
+                  <>
+                    <th className="px-3 py-2" title="Forward line (L1-L4) or defence pair (D1-D3)">
+                      Line
+                    </th>
+                    <th className="px-3 py-2" title="Power-play unit">
+                      PP
+                    </th>
+                  </>
+                )}
+                <th className="px-3 py-2 text-right" title="NHL games in the next 7 days">
+                  G7
+                </th>
+                {injuriesState === "ok" && <th className="px-3 py-2">Inj</th>}
                 <th className="px-3 py-2 text-right">GP</th>
-                {categories.map((cat) => (
+                {filters.statCols && categories.map((cat) => (
                   <th
                     key={cat.key}
                     onClick={() => handleSort(cat.key)}
@@ -686,6 +849,13 @@ export default function Dashboard() {
                     {cat.abbrev}
                   </th>
                 ))}
+                <th
+                  onClick={() => handleSort("vorPerGame")}
+                  className="cursor-pointer px-3 py-2 text-right text-rink-ice/50 hover:text-rink-ice"
+                  title="VOR divided by games played"
+                >
+                  /GP
+                </th>
                 <th
                   onClick={() => handleSort("valueAboveReplacement")}
                   className="cursor-pointer px-3 py-2 text-right text-rink-gold hover:text-rink-ice"
@@ -712,7 +882,7 @@ export default function Dashboard() {
                   {tab === "skaters" && (
                     <td className="px-3 py-1.5 text-rink-ice/60">{r.position}</td>
                   )}
-                  <td className="px-3 py-1.5 text-rink-ice/60">{r.team}</td>
+                  <td className="px-3 py-1.5 text-rink-ice/60">{r.tri || r.team}</td>
                   <td className="px-2 py-1.5">
                     <select
                       value={r.owner ?? ""}
@@ -734,10 +904,59 @@ export default function Dashboard() {
                       ))}
                     </select>
                   </td>
+                  <td className="px-3 py-1.5">
+                    <span
+                      className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                      style={{ background: TIER_STYLE[r.tier as keyof typeof TIER_STYLE].bg, color: TIER_STYLE[r.tier as keyof typeof TIER_STYLE].fg }}
+                    >
+                      {r.tier}
+                    </span>
+                  </td>
+                  {tab === "skaters" && rolesState === "ok" && (
+                    <>
+                      <td
+                        className={`px-3 py-1.5 ${
+                          r.role?.line === "L1" || r.role?.line === "D1"
+                            ? "text-rink-gold"
+                            : "text-rink-ice/60"
+                        }`}
+                        title={
+                          r.role
+                            ? r.role.src === "lines"
+                              ? "From Daily Faceoff line combinations"
+                              : "Inferred from ice time"
+                            : "No line data"
+                        }
+                      >
+                        {r.role?.line ?? "—"}
+                        {r.role?.src === "inferred" && <span className="text-rink-ice/30">*</span>}
+                      </td>
+                      <td
+                        className={`px-3 py-1.5 ${
+                          r.role?.pp === "PP1" ? "text-rink-gold" : "text-rink-ice/60"
+                        }`}
+                      >
+                        {r.role?.pp ?? "—"}
+                      </td>
+                    </>
+                  )}
+                  <td className="stat-num px-3 py-1.5 text-right text-rink-ice/60">
+                    {r.games7 ?? "—"}
+                  </td>
+                  {injuriesState === "ok" && (
+                    <td
+                      className={`px-3 py-1.5 text-xs ${
+                        r.injury?.severity === "out" ? "text-rink-line" : "text-rink-gold"
+                      }`}
+                      title={r.injury ? `${r.injury.status}${r.injury.detail ? ` — ${r.injury.detail}` : ""}` : undefined}
+                    >
+                      {r.injury ? (r.injury.severity === "out" ? "OUT" : "DTD") : ""}
+                    </td>
+                  )}
                   <td className="stat-num px-3 py-1.5 text-right text-rink-ice/60">
                     {r.gamesPlayed}
                   </td>
-                  {categories.map((cat) => {
+                  {filters.statCols && categories.map((cat) => {
                     const raw =
                       cat.key === "shootingPct" || cat.key === "savePct"
                         ? ((r[cat.key] as number) * 100).toFixed(1)
@@ -755,6 +974,9 @@ export default function Dashboard() {
                       </td>
                     );
                   })}
+                  <td className="stat-num px-3 py-1.5 text-right text-rink-ice/50">
+                    {r.vorPerGame.toFixed(2)}
+                  </td>
                   <td className="stat-num px-3 py-1.5 text-right font-semibold text-rink-gold">
                     {r.valueAboveReplacement.toFixed(2)}
                   </td>
