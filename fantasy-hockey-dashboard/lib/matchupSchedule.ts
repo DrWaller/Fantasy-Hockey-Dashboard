@@ -22,6 +22,7 @@ export const YAHOO_NAME_TO_ROSTER_KEY: Record<string, string> = {
   "Ice Drop": "Ice Drop",
   "Top Prospect": "Top Pro...",
   "JRoc's Dazzling Team": "JRoc's D...",
+  "Shooter McGavin": "JRoc's D...", // same team, renamed in Yahoo
   "Mighty pigs": "Mighty...",
   "Charlestown Chiefs": "Charlest...",
   "Kwik-E-Mart Gougers": "Kwik-E-...",

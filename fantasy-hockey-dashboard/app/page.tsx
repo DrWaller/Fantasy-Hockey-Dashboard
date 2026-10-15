@@ -171,6 +171,24 @@ export default function Dashboard() {
     }
   }
 
+  async function handleResetAllEdits() {
+    if (
+      !window.confirm(
+        "Clear every add/drop edit made with the Owner dropdown? Rosters will go back to the imported baseline."
+      )
+    )
+      return;
+    setRosterSaveError(null);
+    try {
+      const res = await fetch("/api/roster?all=1", { method: "DELETE" });
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setRosterOverrides(json.overrides ?? {});
+    } catch (e: any) {
+      setRosterSaveError(e.message ?? "Failed to reset roster edits");
+    }
+  }
+
   const [rawSkaters, setRawSkaters] = useState<RawSkater[] | null>(null);
   const [rawGoalies, setRawGoalies] = useState<RawGoalie[] | null>(null);
   const [season, setSeason] = useState<string>("");
@@ -783,8 +801,16 @@ export default function Dashboard() {
       )}
 
       <footer className="mt-8 font-mono text-xs text-rink-ice/40">
-        Data: NHL stats API. Ownership {yahooConnected ? "syncs live from Yahoo" : "starts from your league's draft-night Team Comparison import"}, plus any add/drop edits made here &mdash; synced across
+        Data: NHL stats API. Ownership {yahooConnected ? "syncs live from Yahoo" : "starts from your league's latest roster import"}, plus any add/drop edits made here &mdash; synced across
         devices. Use the Owner dropdown on any player to update it.
+        {Object.keys(rosterOverrides).length > 0 && (
+          <button
+            onClick={handleResetAllEdits}
+            className="mt-3 block rounded border border-rink-steel/50 px-3 py-1.5 uppercase tracking-wide text-rink-ice/70 hover:text-rink-ice"
+          >
+            Reset all roster edits ({Object.keys(rosterOverrides).length})
+          </button>
+        )}
       </footer>
     </main>
   );

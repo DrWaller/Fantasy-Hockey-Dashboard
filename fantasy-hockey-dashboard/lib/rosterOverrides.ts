@@ -39,3 +39,15 @@ export async function clearOverride(playerName: string): Promise<void> {
   }
   await redis.hdel(HASH_KEY, normalizeName(playerName));
 }
+
+// Wipes every add/drop edit so the baseline in lib/rosters.ts shows through
+// again. Used once after the baseline is re-imported, since stale edits
+// would otherwise keep overriding the fresh data.
+export async function clearAllOverrides(): Promise<void> {
+  if (!redis) {
+    throw new Error(
+      "Roster database isn't connected yet — add the Upstash Redis integration to this Vercel project first."
+    );
+  }
+  await redis.del(HASH_KEY);
+}

@@ -1,7 +1,8 @@
-// Snapshot of all 12 league rosters, imported from the post-draft
-// Team_Comparison_2026-27.xlsx workbook. STATIC DATA — accurate as of
-// draft night, not live. Re-import (replace this file) after trades or
-// notable waiver moves for best accuracy, until the Yahoo API sync lands.
+// Snapshot of all 12 league rosters, re-imported from Yahoo roster screenshots
+// taken Wed Oct 14, 2026 (includes IR+ and NA slots; all of them count as
+// rostered). STATIC DATA — accurate as of that day, not live. Re-import
+// (replace this file) after trades or notable waiver moves, until the Yahoo
+// API sync lands. Team keys are unchanged so matchupSchedule.ts keeps working.
 
 export const YOUR_TEAM = "The Dark Seider (You)";
 
@@ -15,75 +16,9 @@ export type RosteredPlayer = {
 export const ROSTERS: Record<string, RosteredPlayer[]> = {
   "Kwik-E-...": [
     {
-      "name": "Jack Hughes",
-      "pos": "C",
-      "nhl": "NJ",
-      "keeper": false
-    },
-    {
-      "name": "Miro Heiskanen",
-      "pos": "D",
-      "nhl": "DAL",
-      "keeper": false
-    },
-    {
       "name": "Sam Bennett",
       "pos": "C",
       "nhl": "FLA",
-      "keeper": false
-    },
-    {
-      "name": "J.T. Miller",
-      "pos": "C",
-      "nhl": "NYR",
-      "keeper": false
-    },
-    {
-      "name": "Steven Stamkos",
-      "pos": "C",
-      "nhl": "NSH",
-      "keeper": false
-    },
-    {
-      "name": "Carter Hart",
-      "pos": "G",
-      "nhl": "VGK",
-      "keeper": false
-    },
-    {
-      "name": "Alexis Lafreni\u00e8re",
-      "pos": "LW",
-      "nhl": "NYR",
-      "keeper": false
-    },
-    {
-      "name": "Filip Hronek",
-      "pos": "D",
-      "nhl": "VAN",
-      "keeper": false
-    },
-    {
-      "name": "Dustin Wolf",
-      "pos": "G",
-      "nhl": "CGY",
-      "keeper": false
-    },
-    {
-      "name": "Ryan O'Reilly",
-      "pos": "C",
-      "nhl": "NSH",
-      "keeper": false
-    },
-    {
-      "name": "Jackson Blake",
-      "pos": "RW",
-      "nhl": "CAR",
-      "keeper": false
-    },
-    {
-      "name": "Brock Boeser",
-      "pos": "LW",
-      "nhl": "VAN",
       "keeper": false
     },
     {
@@ -93,10 +28,82 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
+      "name": "Alexis Lafrenière",
+      "pos": "LW",
+      "nhl": "NYR",
+      "keeper": false
+    },
+    {
+      "name": "Jack Hughes",
+      "pos": "C",
+      "nhl": "NJ",
+      "keeper": false
+    },
+    {
+      "name": "Jackson Blake",
+      "pos": "RW",
+      "nhl": "CAR",
+      "keeper": false
+    },
+    {
+      "name": "Tom Wilson",
+      "pos": "RW",
+      "nhl": "WSH",
+      "keeper": true
+    },
+    {
+      "name": "Ryan O'Reilly",
+      "pos": "C",
+      "nhl": "NSH",
+      "keeper": false
+    },
+    {
       "name": "Timo Meier",
       "pos": "LW",
       "nhl": "NJ",
       "keeper": true
+    },
+    {
+      "name": "Miro Heiskanen",
+      "pos": "D",
+      "nhl": "DAL",
+      "keeper": false
+    },
+    {
+      "name": "Filip Hronek",
+      "pos": "D",
+      "nhl": "VAN",
+      "keeper": false
+    },
+    {
+      "name": "Quinn Hughes",
+      "pos": "D",
+      "nhl": "MIN",
+      "keeper": true
+    },
+    {
+      "name": "Sean Walker",
+      "pos": "D",
+      "nhl": "CAR",
+      "keeper": false
+    },
+    {
+      "name": "Nick Schmaltz",
+      "pos": "C",
+      "nhl": "UTA",
+      "keeper": true
+    },
+    {
+      "name": "J.T. Miller",
+      "pos": "C",
+      "nhl": "NYR",
+      "keeper": false
+    },
+    {
+      "name": "Brock Boeser",
+      "pos": "LW",
+      "nhl": "VAN",
+      "keeper": false
     },
     {
       "name": "Easton Cowan",
@@ -105,9 +112,15 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Tom Wilson",
-      "pos": "RW",
-      "nhl": "WSH",
+      "name": "Steven Stamkos",
+      "pos": "C",
+      "nhl": "NSH",
+      "keeper": false
+    },
+    {
+      "name": "Kyle Connor",
+      "pos": "LW",
+      "nhl": "WPG",
       "keeper": true
     },
     {
@@ -117,10 +130,16 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Nick Schmaltz",
-      "pos": "C",
-      "nhl": "UTA",
-      "keeper": true
+      "name": "Carter Hart",
+      "pos": "G",
+      "nhl": "VGK",
+      "keeper": false
+    },
+    {
+      "name": "Dustin Wolf",
+      "pos": "G",
+      "nhl": "CGY",
+      "keeper": false
     },
     {
       "name": "Jake Oettinger",
@@ -129,125 +148,17 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Quinn Hughes",
-      "pos": "D",
-      "nhl": "MIN",
-      "keeper": true
-    },
-    {
-      "name": "Kyle Connor",
-      "pos": "LW",
-      "nhl": "WPG",
-      "keeper": true
+      "name": "Frederik Andersen",
+      "pos": "G",
+      "nhl": "EDM",
+      "keeper": false
     }
   ],
   "Ice Drop": [
     {
-      "name": "Mikko Rantanen",
-      "pos": "LW",
-      "nhl": "DAL",
-      "keeper": false
-    },
-    {
-      "name": "Pavel Dorofeyev",
-      "pos": "LW",
-      "nhl": "NYR",
-      "keeper": false
-    },
-    {
-      "name": "Karel Vejmelka",
-      "pos": "G",
-      "nhl": "UTA",
-      "keeper": false
-    },
-    {
-      "name": "Noah Dobson",
-      "pos": "D",
-      "nhl": "MTL",
-      "keeper": false
-    },
-    {
-      "name": "Pyotr Kochetkov",
-      "pos": "G",
-      "nhl": "CAR",
-      "keeper": false
-    },
-    {
-      "name": "Quinton Byfield",
-      "pos": "C",
-      "nhl": "LA",
-      "keeper": false
-    },
-    {
-      "name": "Vincent Trocheck",
-      "pos": "C",
-      "nhl": "UTA",
-      "keeper": false
-    },
-    {
-      "name": "Sergei Murashov",
-      "pos": "G",
-      "nhl": "PIT",
-      "keeper": false
-    },
-    {
-      "name": "Anthony Cirelli",
-      "pos": "C",
-      "nhl": "TB",
-      "keeper": false
-    },
-    {
-      "name": "Anthony Mantha",
-      "pos": "LW",
-      "nhl": "NJ",
-      "keeper": false
-    },
-    {
-      "name": "Tyson Foerster",
-      "pos": "LW",
-      "nhl": "PHI",
-      "keeper": false
-    },
-    {
-      "name": "Ryan Nugent-Hopkins",
+      "name": "Connor McDavid",
       "pos": "C",
       "nhl": "EDM",
-      "keeper": false
-    },
-    {
-      "name": "Josh Doan",
-      "pos": "RW",
-      "nhl": "BUF",
-      "keeper": false
-    },
-    {
-      "name": "Andrei Svechnikov",
-      "pos": "LW",
-      "nhl": "CAR",
-      "keeper": true
-    },
-    {
-      "name": "Filip Forsberg",
-      "pos": "LW",
-      "nhl": "NSH",
-      "keeper": true
-    },
-    {
-      "name": "Jesper Bratt",
-      "pos": "LW",
-      "nhl": "NJ",
-      "keeper": true
-    },
-    {
-      "name": "Jakob Chychrun",
-      "pos": "D",
-      "nhl": "WSH",
-      "keeper": true
-    },
-    {
-      "name": "Zeev Buium",
-      "pos": "D",
-      "nhl": "VAN",
       "keeper": true
     },
     {
@@ -257,30 +168,150 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
+      "name": "Andrei Svechnikov",
+      "pos": "LW",
+      "nhl": "CAR",
+      "keeper": true
+    },
+    {
+      "name": "Mikko Rantanen",
+      "pos": "LW",
+      "nhl": "DAL",
+      "keeper": false
+    },
+    {
+      "name": "Jesper Bratt",
+      "pos": "LW",
+      "nhl": "NJ",
+      "keeper": true
+    },
+    {
+      "name": "Pavel Dorofeyev",
+      "pos": "LW",
+      "nhl": "NYR",
+      "keeper": false
+    },
+    {
+      "name": "Anthony Cirelli",
+      "pos": "C",
+      "nhl": "TB",
+      "keeper": false
+    },
+    {
+      "name": "Filip Forsberg",
+      "pos": "LW",
+      "nhl": "NSH",
+      "keeper": true
+    },
+    {
+      "name": "Noah Dobson",
+      "pos": "D",
+      "nhl": "MTL",
+      "keeper": false
+    },
+    {
+      "name": "Jakob Chychrun",
+      "pos": "D",
+      "nhl": "WSH",
+      "keeper": true
+    },
+    {
       "name": "Zach Werenski",
       "pos": "D",
       "nhl": "CBJ",
       "keeper": true
     },
     {
-      "name": "Connor McDavid",
-      "pos": "C",
+      "name": "Mattias Ekholm",
+      "pos": "D",
       "nhl": "EDM",
-      "keeper": true
-    }
-  ],
-  "Top Pro...": [
+      "keeper": false
+    },
     {
-      "name": "Artemi Panarin",
+      "name": "Vincent Trocheck",
+      "pos": "C",
+      "nhl": "UTA",
+      "keeper": false
+    },
+    {
+      "name": "Tyson Foerster",
       "pos": "LW",
+      "nhl": "PHI",
+      "keeper": false
+    },
+    {
+      "name": "Claude Giroux",
+      "pos": "C",
+      "nhl": "OTT",
+      "keeper": false
+    },
+    {
+      "name": "Josh Doan",
+      "pos": "RW",
+      "nhl": "BUF",
+      "keeper": false
+    },
+    {
+      "name": "Quinton Byfield",
+      "pos": "C",
       "nhl": "LA",
       "keeper": false
     },
     {
-      "name": "Travis Konecny",
-      "pos": "LW",
-      "nhl": "PHI",
+      "name": "Ryan Nugent-Hopkins",
+      "pos": "C",
+      "nhl": "EDM",
       "keeper": false
+    },
+    {
+      "name": "Pyotr Kochetkov",
+      "pos": "G",
+      "nhl": "CAR",
+      "keeper": false
+    },
+    {
+      "name": "Sergei Murashov",
+      "pos": "G",
+      "nhl": "PIT",
+      "keeper": false
+    },
+    {
+      "name": "Devon Levi",
+      "pos": "G",
+      "nhl": "EDM",
+      "keeper": false
+    },
+    {
+      "name": "Karel Vejmelka",
+      "pos": "G",
+      "nhl": "UTA",
+      "keeper": false
+    }
+  ],
+  "Top Pro...": [
+    {
+      "name": "Brock Nelson",
+      "pos": "C",
+      "nhl": "COL",
+      "keeper": false
+    },
+    {
+      "name": "Jared McCann",
+      "pos": "C",
+      "nhl": "SEA",
+      "keeper": false
+    },
+    {
+      "name": "Tomas Hertl",
+      "pos": "C",
+      "nhl": "VGK",
+      "keeper": false
+    },
+    {
+      "name": "Tim Stützle",
+      "pos": "C",
+      "nhl": "OTT",
+      "keeper": true
     },
     {
       "name": "Alex Tuch",
@@ -295,57 +326,21 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "John Gibson",
-      "pos": "G",
-      "nhl": "DET",
-      "keeper": false
-    },
-    {
-      "name": "Brock Nelson",
-      "pos": "C",
-      "nhl": "COL",
-      "keeper": false
-    },
-    {
-      "name": "Jake Allen",
-      "pos": "G",
-      "nhl": "NJ",
-      "keeper": false
-    },
-    {
       "name": "Owen Tippett",
       "pos": "LW",
       "nhl": "PHI",
       "keeper": false
     },
     {
-      "name": "Darnell Nurse",
-      "pos": "D",
-      "nhl": "SJ",
-      "keeper": false
-    },
-    {
-      "name": "Anton Forsberg",
-      "pos": "G",
+      "name": "Artemi Panarin",
+      "pos": "LW",
       "nhl": "LA",
       "keeper": false
     },
     {
-      "name": "Brad Marchand",
-      "pos": "LW",
-      "nhl": "FLA",
-      "keeper": false
-    },
-    {
-      "name": "Tomas Hertl",
-      "pos": "C",
-      "nhl": "VGK",
-      "keeper": false
-    },
-    {
-      "name": "Jared McCann",
-      "pos": "C",
-      "nhl": "SEA",
+      "name": "Darnell Nurse",
+      "pos": "D",
+      "nhl": "SJ",
       "keeper": false
     },
     {
@@ -367,6 +362,18 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
+      "name": "Evan Bouchard",
+      "pos": "D",
+      "nhl": "EDM",
+      "keeper": true
+    },
+    {
+      "name": "Sidney Crosby",
+      "pos": "C",
+      "nhl": "PIT",
+      "keeper": true
+    },
+    {
       "name": "Lucas Raymond",
       "pos": "RW",
       "nhl": "DET",
@@ -379,31 +386,49 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Tim St\u00fctzle",
-      "pos": "C",
-      "nhl": "OTT",
-      "keeper": true
+      "name": "Travis Konecny",
+      "pos": "LW",
+      "nhl": "PHI",
+      "keeper": false
     },
     {
-      "name": "Evan Bouchard",
-      "pos": "D",
-      "nhl": "EDM",
-      "keeper": true
+      "name": "Brad Marchand",
+      "pos": "LW",
+      "nhl": "FLA",
+      "keeper": false
     },
     {
-      "name": "Sidney Crosby",
-      "pos": "C",
-      "nhl": "PIT",
-      "keeper": true
+      "name": "John Gibson",
+      "pos": "G",
+      "nhl": "DET",
+      "keeper": false
+    },
+    {
+      "name": "Leevi Merilainen",
+      "pos": "G",
+      "nhl": "VAN",
+      "keeper": false
+    },
+    {
+      "name": "Nico Daws",
+      "pos": "G",
+      "nhl": "NJ",
+      "keeper": false
+    },
+    {
+      "name": "Jake Allen",
+      "pos": "G",
+      "nhl": "NJ",
+      "keeper": false
+    },
+    {
+      "name": "Anton Forsberg",
+      "pos": "G",
+      "nhl": "LA",
+      "keeper": false
     }
   ],
   "Mighty...": [
-    {
-      "name": "Sergei Bobrovsky",
-      "pos": "G",
-      "nhl": "TOR",
-      "keeper": false
-    },
     {
       "name": "Morgan Geekie",
       "pos": "C",
@@ -411,51 +436,9 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Brock Faber",
-      "pos": "D",
-      "nhl": "MIN",
-      "keeper": false
-    },
-    {
-      "name": "Anthony Stolarz",
-      "pos": "G",
-      "nhl": "TOR",
-      "keeper": false
-    },
-    {
-      "name": "Mattias Samuelsson",
-      "pos": "D",
-      "nhl": "BUF",
-      "keeper": false
-    },
-    {
-      "name": "Jean-Gabriel Pageau",
+      "name": "Erik Haula",
       "pos": "C",
-      "nhl": "NYI",
-      "keeper": false
-    },
-    {
-      "name": "Rasmus Andersson",
-      "pos": "D",
-      "nhl": "VGK",
-      "keeper": false
-    },
-    {
-      "name": "Tyler Bertuzzi",
-      "pos": "LW",
-      "nhl": "CHI",
-      "keeper": false
-    },
-    {
-      "name": "Bobby McMann",
-      "pos": "LW",
-      "nhl": "SEA",
-      "keeper": false
-    },
-    {
-      "name": "Pavel Mintyukov",
-      "pos": "D",
-      "nhl": "ANA",
+      "nhl": "LA",
       "keeper": false
     },
     {
@@ -465,10 +448,22 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Pavel Zacha",
-      "pos": "C",
-      "nhl": "BOS",
+      "name": "Jason Robertson",
+      "pos": "LW",
+      "nhl": "DAL",
+      "keeper": true
+    },
+    {
+      "name": "Tyler Bertuzzi",
+      "pos": "LW",
+      "nhl": "CHI",
       "keeper": false
+    },
+    {
+      "name": "Sam Reinhart",
+      "pos": "C",
+      "nhl": "FLA",
+      "keeper": true
     },
     {
       "name": "Mason McTavish",
@@ -477,9 +472,9 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Connor Hellebuyck",
-      "pos": "G",
-      "nhl": "WPG",
+      "name": "Beckett Sennecke",
+      "pos": "LW",
+      "nhl": "ANA",
       "keeper": true
     },
     {
@@ -489,28 +484,16 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "John Tavares",
-      "pos": "C",
-      "nhl": "TOR",
-      "keeper": true
-    },
-    {
-      "name": "Sam Reinhart",
-      "pos": "RW",
-      "nhl": "FLA",
-      "keeper": true
-    },
-    {
-      "name": "Beckett Sennecke",
-      "pos": "RW",
+      "name": "Pavel Mintyukov",
+      "pos": "D",
       "nhl": "ANA",
-      "keeper": true
+      "keeper": false
     },
     {
-      "name": "Mark Scheifele",
-      "pos": "C",
-      "nhl": "WPG",
-      "keeper": true
+      "name": "Mattias Samuelsson",
+      "pos": "D",
+      "nhl": "BUF",
+      "keeper": false
     },
     {
       "name": "Lane Hutson",
@@ -519,47 +502,83 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Jason Robertson",
+      "name": "Jean-Gabriel Pageau",
+      "pos": "C",
+      "nhl": "NYI",
+      "keeper": false
+    },
+    {
+      "name": "Brayden Schenn",
+      "pos": "C",
+      "nhl": "NYI",
+      "keeper": false
+    },
+    {
+      "name": "Pavel Zacha",
+      "pos": "C",
+      "nhl": "BOS",
+      "keeper": false
+    },
+    {
+      "name": "Rasmus Andersson",
+      "pos": "D",
+      "nhl": "VGK",
+      "keeper": false
+    },
+    {
+      "name": "Mark Scheifele",
+      "pos": "C",
+      "nhl": "WPG",
+      "keeper": true
+    },
+    {
+      "name": "Bobby McMann",
       "pos": "LW",
-      "nhl": "DAL",
+      "nhl": "SEA",
+      "keeper": false
+    },
+    {
+      "name": "Brock Faber",
+      "pos": "D",
+      "nhl": "MIN",
+      "keeper": false
+    },
+    {
+      "name": "John Tavares",
+      "pos": "C",
+      "nhl": "TOR",
+      "keeper": true
+    },
+    {
+      "name": "Sergei Bobrovsky",
+      "pos": "G",
+      "nhl": "TOR",
+      "keeper": false
+    },
+    {
+      "name": "Anthony Stolarz",
+      "pos": "G",
+      "nhl": "TOR",
+      "keeper": false
+    },
+    {
+      "name": "Jordan Binnington",
+      "pos": "G",
+      "nhl": "STL",
+      "keeper": false
+    },
+    {
+      "name": "Connor Hellebuyck",
+      "pos": "G",
+      "nhl": "WPG",
       "keeper": true
     }
   ],
   "Arkham...": [
     {
-      "name": "Adrian Kempe",
-      "pos": "RW",
-      "nhl": "LA",
-      "keeper": false
-    },
-    {
-      "name": "Erik Karlsson",
-      "pos": "D",
-      "nhl": "PIT",
-      "keeper": false
-    },
-    {
-      "name": "Lukas Dostal",
-      "pos": "G",
-      "nhl": "ANA",
-      "keeper": false
-    },
-    {
       "name": "Logan Stankoven",
       "pos": "C",
       "nhl": "CAR",
-      "keeper": false
-    },
-    {
-      "name": "Mark Stone",
-      "pos": "RW",
-      "nhl": "VGK",
-      "keeper": false
-    },
-    {
-      "name": "Spencer Knight",
-      "pos": "G",
-      "nhl": "CHI",
       "keeper": false
     },
     {
@@ -569,40 +588,82 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
+      "name": "Viktor Arvidsson",
+      "pos": "LW",
+      "nhl": "DET",
+      "keeper": true
+    },
+    {
+      "name": "Paul Cotter",
+      "pos": "C",
+      "nhl": "VAN",
+      "keeper": false
+    },
+    {
+      "name": "Adrian Kempe",
+      "pos": "RW",
+      "nhl": "LA",
+      "keeper": false
+    },
+    {
+      "name": "Artturi Lehkonen",
+      "pos": "LW",
+      "nhl": "COL",
+      "keeper": true
+    },
+    {
+      "name": "Mark Stone",
+      "pos": "RW",
+      "nhl": "VGK",
+      "keeper": false
+    },
+    {
+      "name": "Fraser Minten",
+      "pos": "C",
+      "nhl": "BOS",
+      "keeper": false
+    },
+    {
+      "name": "Erik Karlsson",
+      "pos": "D",
+      "nhl": "PIT",
+      "keeper": false
+    },
+    {
+      "name": "Nikita Zadorov",
+      "pos": "D",
+      "nhl": "BOS",
+      "keeper": true
+    },
+    {
+      "name": "Morgan Rielly",
+      "pos": "D",
+      "nhl": "TOR",
+      "keeper": true
+    },
+    {
       "name": "Vince Dunn",
       "pos": "D",
       "nhl": "SEA",
       "keeper": false
     },
     {
-      "name": "Joey Daccord",
-      "pos": "G",
+      "name": "Mikael Granlund",
+      "pos": "C",
+      "nhl": "ANA",
+      "keeper": true
+    },
+    {
+      "name": "Kaapo Kakko",
+      "pos": "RW",
       "nhl": "SEA",
       "keeper": false
     },
     {
-      "name": "William Eklund",
-      "pos": "LW",
-      "nhl": "OTT",
-      "keeper": false
-    },
-    {
-      "name": "Simon Nemec",
-      "pos": "D",
-      "nhl": "NJ",
-      "keeper": false
-    },
-    {
-      "name": "Mason Marchment",
-      "pos": "LW",
-      "nhl": "SJ",
-      "keeper": false
-    },
-    {
-      "name": "Matt Duchene",
+      "name": "Blake Coleman",
       "pos": "C",
-      "nhl": "DAL",
-      "keeper": false
+      "nhl": "MIN",
+      "keeper": true
     },
     {
       "name": "Luke Evangelista",
@@ -617,101 +678,53 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Nikita Zadorov",
-      "pos": "D",
-      "nhl": "BOS",
-      "keeper": true
-    },
-    {
-      "name": "Artturi Lehkonen",
+      "name": "Mason Marchment",
       "pos": "LW",
-      "nhl": "COL",
-      "keeper": true
+      "nhl": "SJ",
+      "keeper": false
     },
     {
-      "name": "Mikael Granlund",
+      "name": "Pierre-Luc Dubois",
       "pos": "C",
+      "nhl": "WSH",
+      "keeper": false
+    },
+    {
+      "name": "William Eklund",
+      "pos": "LW",
+      "nhl": "OTT",
+      "keeper": false
+    },
+    {
+      "name": "Matt Duchene",
+      "pos": "C",
+      "nhl": "DAL",
+      "keeper": false
+    },
+    {
+      "name": "Lukas Dostal",
+      "pos": "G",
       "nhl": "ANA",
-      "keeper": true
+      "keeper": false
     },
     {
-      "name": "Morgan Rielly",
-      "pos": "D",
-      "nhl": "TOR",
-      "keeper": true
+      "name": "Joey Daccord",
+      "pos": "G",
+      "nhl": "SEA",
+      "keeper": false
     },
     {
-      "name": "Blake Coleman",
-      "pos": "C",
-      "nhl": "MIN",
-      "keeper": true
-    },
-    {
-      "name": "Viktor Arvidsson",
-      "pos": "RW",
-      "nhl": "DET",
-      "keeper": true
+      "name": "Joseph Woll",
+      "pos": "G",
+      "nhl": "PHI",
+      "keeper": false
     }
   ],
   "JRoc's D...": [
     {
-      "name": "Gavin McKenna",
-      "pos": "C",
-      "nhl": "TOR",
-      "keeper": false
-    },
-    {
-      "name": "John Carlson",
-      "pos": "D",
-      "nhl": "TB",
-      "keeper": false
-    },
-    {
       "name": "Dylan Holloway",
-      "pos": "RW",
-      "nhl": "STL",
-      "keeper": false
-    },
-    {
-      "name": "Zach Hyman",
-      "pos": "LW",
-      "nhl": "EDM",
-      "keeper": false
-    },
-    {
-      "name": "Brandt Clarke",
-      "pos": "D",
-      "nhl": "LA",
-      "keeper": false
-    },
-    {
-      "name": "Gabe Perreault",
-      "pos": "RW",
-      "nhl": "NYR",
-      "keeper": false
-    },
-    {
-      "name": "Joel Hofer",
-      "pos": "G",
-      "nhl": "STL",
-      "keeper": false
-    },
-    {
-      "name": "Mathew Barzal",
       "pos": "C",
-      "nhl": "NYI",
-      "keeper": false
-    },
-    {
-      "name": "Gabriel Vilardi",
-      "pos": "C",
-      "nhl": "WPG",
-      "keeper": false
-    },
-    {
-      "name": "Darcy Kuemper",
-      "pos": "G",
-      "nhl": "LA",
+      "nhl": "STL",
       "keeper": false
     },
     {
@@ -721,15 +734,75 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Mattias Ekholm",
-      "pos": "D",
-      "nhl": "EDM",
-      "keeper": false
+      "name": "Gabriel Landeskog",
+      "pos": "LW",
+      "nhl": "COL",
+      "keeper": true
+    },
+    {
+      "name": "Nicholas Robertson",
+      "pos": "RW",
+      "nhl": "PIT",
+      "keeper": true
+    },
+    {
+      "name": "Pavel Buchnevich",
+      "pos": "C",
+      "nhl": "STL",
+      "keeper": true
     },
     {
       "name": "Will Cuylle",
       "pos": "LW",
       "nhl": "NYR",
+      "keeper": false
+    },
+    {
+      "name": "Gabe Perreault",
+      "pos": "LW",
+      "nhl": "NYR",
+      "keeper": false
+    },
+    {
+      "name": "Jeremy Lauzon",
+      "pos": "D",
+      "nhl": "VGK",
+      "keeper": true
+    },
+    {
+      "name": "John Carlson",
+      "pos": "D",
+      "nhl": "TB",
+      "keeper": false
+    },
+    {
+      "name": "Brandt Clarke",
+      "pos": "D",
+      "nhl": "LA",
+      "keeper": false
+    },
+    {
+      "name": "Josh Manson",
+      "pos": "D",
+      "nhl": "COL",
+      "keeper": false
+    },
+    {
+      "name": "Kasperi Kapanen",
+      "pos": "RW",
+      "nhl": "EDM",
+      "keeper": false
+    },
+    {
+      "name": "Luca Cagnoni",
+      "pos": "D",
+      "nhl": "SJ",
+      "keeper": false
+    },
+    {
+      "name": "Gavin McKenna",
+      "pos": "LW",
+      "nhl": "TOR",
       "keeper": false
     },
     {
@@ -739,28 +812,16 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Mike Matheson",
-      "pos": "D",
-      "nhl": "MTL",
-      "keeper": true
-    },
-    {
-      "name": "Gabriel Landeskog",
-      "pos": "LW",
-      "nhl": "COL",
-      "keeper": true
-    },
-    {
-      "name": "Stuart Skinner",
-      "pos": "G",
+      "name": "Gabriel Vilardi",
+      "pos": "C",
       "nhl": "WPG",
-      "keeper": true
+      "keeper": false
     },
     {
-      "name": "Jeremy Lauzon",
-      "pos": "D",
-      "nhl": "VGK",
-      "keeper": true
+      "name": "Mathew Barzal",
+      "pos": "C",
+      "nhl": "NYI",
+      "keeper": false
     },
     {
       "name": "Matt Savoie",
@@ -769,19 +830,55 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Pavel Buchnevich",
-      "pos": "RW",
-      "nhl": "STL",
-      "keeper": true
+      "name": "Zach Hyman",
+      "pos": "LW",
+      "nhl": "EDM",
+      "keeper": false
     },
     {
-      "name": "Nicholas Robertson",
-      "pos": "RW",
+      "name": "Roger McQueen",
+      "pos": "C",
+      "nhl": "ANA",
+      "keeper": false
+    },
+    {
+      "name": "Darcy Kuemper",
+      "pos": "G",
+      "nhl": "LA",
+      "keeper": false
+    },
+    {
+      "name": "Tristan Jarry",
+      "pos": "G",
+      "nhl": "EDM",
+      "keeper": false
+    },
+    {
+      "name": "Arturs Silovs",
+      "pos": "G",
       "nhl": "PIT",
+      "keeper": false
+    },
+    {
+      "name": "Joel Hofer",
+      "pos": "G",
+      "nhl": "STL",
+      "keeper": false
+    },
+    {
+      "name": "Stuart Skinner",
+      "pos": "G",
+      "nhl": "WPG",
       "keeper": true
     }
   ],
   "UmZy's...": [
+    {
+      "name": "Auston Matthews",
+      "pos": "C",
+      "nhl": "TOR",
+      "keeper": true
+    },
     {
       "name": "Brayden Point",
       "pos": "C",
@@ -789,57 +886,9 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Jacob Markstrom",
-      "pos": "G",
-      "nhl": "FLA",
-      "keeper": false
-    },
-    {
-      "name": "Ivar Stenberg",
+      "name": "Ivan Barbashev",
       "pos": "LW",
-      "nhl": "SJ",
-      "keeper": false
-    },
-    {
-      "name": "Charlie McAvoy",
-      "pos": "D",
-      "nhl": "BOS",
-      "keeper": false
-    },
-    {
-      "name": "Shayne Gostisbehere",
-      "pos": "D",
-      "nhl": "CAR",
-      "keeper": false
-    },
-    {
-      "name": "Ukko-Pekka Luukkonen",
-      "pos": "G",
-      "nhl": "BUF",
-      "keeper": false
-    },
-    {
-      "name": "Yaroslav Askarov",
-      "pos": "G",
-      "nhl": "SJ",
-      "keeper": false
-    },
-    {
-      "name": "Seth Jones",
-      "pos": "D",
-      "nhl": "FLA",
-      "keeper": false
-    },
-    {
-      "name": "Michael Misa",
-      "pos": "C",
-      "nhl": "SJ",
-      "keeper": false
-    },
-    {
-      "name": "Patrick Kane",
-      "pos": "RW",
-      "nhl": "CHI",
+      "nhl": "VGK",
       "keeper": false
     },
     {
@@ -849,27 +898,9 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Juraj Slafkovsky",
+      "name": "Matvei Michkov",
       "pos": "LW",
-      "nhl": "MTL",
-      "keeper": true
-    },
-    {
-      "name": "Jimmy Snuggerud",
-      "pos": "RW",
-      "nhl": "STL",
-      "keeper": true
-    },
-    {
-      "name": "Dylan Larkin",
-      "pos": "C",
-      "nhl": "DET",
-      "keeper": true
-    },
-    {
-      "name": "Jake Guentzel",
-      "pos": "LW",
-      "nhl": "TB",
+      "nhl": "PHI",
       "keeper": true
     },
     {
@@ -879,15 +910,9 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Matvei Michkov",
+      "name": "Juraj Slafkovsky",
       "pos": "LW",
-      "nhl": "PHI",
-      "keeper": true
-    },
-    {
-      "name": "Leon Draisaitl",
-      "pos": "C",
-      "nhl": "EDM",
+      "nhl": "MTL",
       "keeper": true
     },
     {
@@ -897,66 +922,114 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Auston Matthews",
-      "pos": "C",
-      "nhl": "TOR",
-      "keeper": true
+      "name": "Shayne Gostisbehere",
+      "pos": "D",
+      "nhl": "CAR",
+      "keeper": false
+    },
+    {
+      "name": "Seth Jones",
+      "pos": "D",
+      "nhl": "FLA",
+      "keeper": false
+    },
+    {
+      "name": "Charlie McAvoy",
+      "pos": "D",
+      "nhl": "BOS",
+      "keeper": false
     },
     {
       "name": "Cale Makar",
       "pos": "D",
       "nhl": "COL",
       "keeper": true
+    },
+    {
+      "name": "Dylan Larkin",
+      "pos": "C",
+      "nhl": "DET",
+      "keeper": true
+    },
+    {
+      "name": "Leon Draisaitl",
+      "pos": "C",
+      "nhl": "EDM",
+      "keeper": true
+    },
+    {
+      "name": "Jake Guentzel",
+      "pos": "LW",
+      "nhl": "TB",
+      "keeper": true
+    },
+    {
+      "name": "Jimmy Snuggerud",
+      "pos": "RW",
+      "nhl": "STL",
+      "keeper": true
+    },
+    {
+      "name": "Ivar Stenberg",
+      "pos": "LW",
+      "nhl": "SJ",
+      "keeper": false
+    },
+    {
+      "name": "Michael Misa",
+      "pos": "C",
+      "nhl": "SJ",
+      "keeper": false
+    },
+    {
+      "name": "Jacob Markstrom",
+      "pos": "G",
+      "nhl": "FLA",
+      "keeper": false
+    },
+    {
+      "name": "Yaroslav Askarov",
+      "pos": "G",
+      "nhl": "SJ",
+      "keeper": false
+    },
+    {
+      "name": "Ukko-Pekka Luukkonen",
+      "pos": "G",
+      "nhl": "BUF",
+      "keeper": false
     }
   ],
   "Charlest...": [
     {
-      "name": "Kirill Marchenko",
-      "pos": "RW",
-      "nhl": "CBJ",
-      "keeper": false
-    },
-    {
-      "name": "Jakub Dobes",
-      "pos": "G",
-      "nhl": "MTL",
-      "keeper": false
-    },
-    {
-      "name": "Josh Morrissey",
-      "pos": "D",
-      "nhl": "WPG",
-      "keeper": false
-    },
-    {
-      "name": "James Hagens",
+      "name": "Leo Carlsson",
       "pos": "C",
-      "nhl": "BOS",
-      "keeper": false
+      "nhl": "ANA",
+      "keeper": true
     },
     {
-      "name": "Juuse Saros",
-      "pos": "G",
-      "nhl": "NSH",
-      "keeper": false
-    },
-    {
-      "name": "Rickard Rakell",
+      "name": "Tyler Seguin",
       "pos": "C",
-      "nhl": "PIT",
-      "keeper": false
-    },
-    {
-      "name": "Thomas Harley",
-      "pos": "D",
       "nhl": "DAL",
       "keeper": false
     },
     {
-      "name": "Roman Kantserov",
-      "pos": "RW",
-      "nhl": "CHI",
+      "name": "Kirill Marchenko",
+      "pos": "LW",
+      "nhl": "TOR",
       "keeper": false
+    },
+    {
+      "name": "Chris Kreider",
+      "pos": "LW",
+      "nhl": "MTL",
+      "keeper": false
+    },
+    {
+      "name": "Brandon Hagel",
+      "pos": "LW",
+      "nhl": "TB",
+      "keeper": true
     },
     {
       "name": "Ryan Leonard",
@@ -965,21 +1038,21 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Devon Toews",
-      "pos": "D",
-      "nhl": "COL",
-      "keeper": false
+      "name": "Nick Suzuki",
+      "pos": "C",
+      "nhl": "MTL",
+      "keeper": true
     },
     {
-      "name": "Simon Edvinsson",
-      "pos": "D",
-      "nhl": "DET",
-      "keeper": false
-    },
-    {
-      "name": "Zach Benson",
-      "pos": "LW",
+      "name": "Connor Bedard",
+      "pos": "C",
       "nhl": "CHI",
+      "keeper": true
+    },
+    {
+      "name": "Thomas Harley",
+      "pos": "D",
+      "nhl": "DAL",
       "keeper": false
     },
     {
@@ -989,34 +1062,16 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Lawson Crouse",
-      "pos": "LW",
-      "nhl": "UTA",
+      "name": "Devon Toews",
+      "pos": "D",
+      "nhl": "COL",
       "keeper": false
     },
     {
-      "name": "Connor Bedard",
-      "pos": "C",
-      "nhl": "CHI",
-      "keeper": true
-    },
-    {
-      "name": "Jeremy Swayman",
-      "pos": "G",
-      "nhl": "BOS",
-      "keeper": true
-    },
-    {
-      "name": "Leo Carlsson",
-      "pos": "C",
-      "nhl": "ANA",
-      "keeper": true
-    },
-    {
-      "name": "Brandon Hagel",
-      "pos": "LW",
-      "nhl": "TB",
-      "keeper": true
+      "name": "Logan Stanley",
+      "pos": "D",
+      "nhl": "NYI",
+      "keeper": false
     },
     {
       "name": "Sebastian Aho",
@@ -1025,41 +1080,71 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Nick Suzuki",
+      "name": "Rickard Rakell",
       "pos": "C",
-      "nhl": "MTL",
-      "keeper": true
+      "nhl": "PIT",
+      "keeper": false
+    },
+    {
+      "name": "Zach Benson",
+      "pos": "LW",
+      "nhl": "BUF",
+      "keeper": false
+    },
+    {
+      "name": "James Hagens",
+      "pos": "C",
+      "nhl": "BOS",
+      "keeper": false
+    },
+    {
+      "name": "Lawson Crouse",
+      "pos": "LW",
+      "nhl": "UTA",
+      "keeper": false
     },
     {
       "name": "Wyatt Johnston",
       "pos": "C",
       "nhl": "DAL",
       "keeper": true
+    },
+    {
+      "name": "Josh Morrissey",
+      "pos": "D",
+      "nhl": "WPG",
+      "keeper": false
+    },
+    {
+      "name": "Jakub Dobes",
+      "pos": "G",
+      "nhl": "MTL",
+      "keeper": false
+    },
+    {
+      "name": "Juuse Saros",
+      "pos": "G",
+      "nhl": "NSH",
+      "keeper": false
+    },
+    {
+      "name": "Jeremy Swayman",
+      "pos": "G",
+      "nhl": "BOS",
+      "keeper": true
+    },
+    {
+      "name": "Spencer Knight",
+      "pos": "G",
+      "nhl": "CHI",
+      "keeper": false
     }
   ],
   "THE GO...": [
     {
-      "name": "Robert Thomas",
+      "name": "Jack Roslovic",
       "pos": "C",
-      "nhl": "STL",
-      "keeper": false
-    },
-    {
-      "name": "Roope Hintz",
-      "pos": "C",
-      "nhl": "DAL",
-      "keeper": false
-    },
-    {
-      "name": "Mikhail Sergachev",
-      "pos": "D",
-      "nhl": "UTA",
-      "keeper": false
-    },
-    {
-      "name": "Kiefer Sherwood",
-      "pos": "LW",
-      "nhl": "SJ",
+      "nhl": "TOR",
       "keeper": false
     },
     {
@@ -1069,75 +1154,15 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Brandon Montour",
-      "pos": "D",
-      "nhl": "SEA",
-      "keeper": false
-    },
-    {
-      "name": "Dougie Hamilton",
-      "pos": "D",
-      "nhl": "NJ",
-      "keeper": false
-    },
-    {
-      "name": "Jack Roslovic",
-      "pos": "C",
-      "nhl": "TOR",
-      "keeper": false
-    },
-    {
-      "name": "Filip Gustavsson",
-      "pos": "G",
-      "nhl": "MIN",
-      "keeper": false
-    },
-    {
-      "name": "Thomas Chabot",
-      "pos": "D",
-      "nhl": "OTT",
-      "keeper": false
-    },
-    {
-      "name": "Justin Faulk",
-      "pos": "D",
-      "nhl": "DET",
-      "keeper": false
-    },
-    {
-      "name": "Sam Rinzel",
-      "pos": "D",
-      "nhl": "CHI",
-      "keeper": false
-    },
-    {
-      "name": "Valeri Nichushkin",
-      "pos": "LW",
-      "nhl": "CBJ",
-      "keeper": false
-    },
-    {
       "name": "Nick Paul",
       "pos": "C",
       "nhl": "TOR",
       "keeper": false
     },
     {
-      "name": "Drake Batherson",
-      "pos": "LW",
-      "nhl": "OTT",
-      "keeper": true
-    },
-    {
-      "name": "Scott Wedgewood",
-      "pos": "G",
-      "nhl": "COL",
-      "keeper": true
-    },
-    {
-      "name": "Kirill Kaprizov",
-      "pos": "LW",
-      "nhl": "MIN",
+      "name": "David Pastrnak",
+      "pos": "RW",
+      "nhl": "BOS",
       "keeper": true
     },
     {
@@ -1147,10 +1172,94 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Jesper Wallstedt",
-      "pos": "G",
+      "name": "Drake Batherson",
+      "pos": "LW",
+      "nhl": "OTT",
+      "keeper": true
+    },
+    {
+      "name": "Kirill Kaprizov",
+      "pos": "LW",
       "nhl": "MIN",
       "keeper": true
+    },
+    {
+      "name": "Mikhail Sergachev",
+      "pos": "D",
+      "nhl": "UTA",
+      "keeper": false
+    },
+    {
+      "name": "Dougie Hamilton",
+      "pos": "D",
+      "nhl": "NJ",
+      "keeper": false
+    },
+    {
+      "name": "Brandon Montour",
+      "pos": "D",
+      "nhl": "SEA",
+      "keeper": false
+    },
+    {
+      "name": "Kiefer Sherwood",
+      "pos": "LW",
+      "nhl": "SJ",
+      "keeper": false
+    },
+    {
+      "name": "Robert Thomas",
+      "pos": "C",
+      "nhl": "STL",
+      "keeper": false
+    },
+    {
+      "name": "Vladislav Gavrikov",
+      "pos": "D",
+      "nhl": "NYR",
+      "keeper": false
+    },
+    {
+      "name": "Valeri Nichushkin",
+      "pos": "LW",
+      "nhl": "CBJ",
+      "keeper": false
+    },
+    {
+      "name": "Roope Hintz",
+      "pos": "C",
+      "nhl": "DAL",
+      "keeper": false
+    },
+    {
+      "name": "Jared Spurgeon",
+      "pos": "D",
+      "nhl": "MIN",
+      "keeper": false
+    },
+    {
+      "name": "Kevin Lankinen",
+      "pos": "G",
+      "nhl": "VAN",
+      "keeper": false
+    },
+    {
+      "name": "Scott Wedgewood",
+      "pos": "G",
+      "nhl": "COL",
+      "keeper": true
+    },
+    {
+      "name": "Charlie Lindgren",
+      "pos": "G",
+      "nhl": "WSH",
+      "keeper": false
+    },
+    {
+      "name": "Adin Hill",
+      "pos": "G",
+      "nhl": "VGK",
+      "keeper": false
     },
     {
       "name": "Andrei Vasilevskiy",
@@ -1159,24 +1268,48 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "David Pastrnak",
-      "pos": "RW",
-      "nhl": "BOS",
+      "name": "Jesper Wallstedt",
+      "pos": "G",
+      "nhl": "MIN",
       "keeper": true
+    },
+    {
+      "name": "Filip Gustavsson",
+      "pos": "G",
+      "nhl": "MIN",
+      "keeper": false
     }
   ],
   "Mother...": [
     {
-      "name": "Adam Fantilli",
+      "name": "Nazem Kadri",
       "pos": "C",
-      "nhl": "CBJ",
+      "nhl": "COL",
       "keeper": false
     },
     {
-      "name": "MacKenzie Blackwood",
-      "pos": "G",
+      "name": "Nathan MacKinnon",
+      "pos": "C",
       "nhl": "COL",
+      "keeper": true
+    },
+    {
+      "name": "Jonathan Marchessault",
+      "pos": "LW",
+      "nhl": "NSH",
       "keeper": false
+    },
+    {
+      "name": "Ilya Protas",
+      "pos": "C",
+      "nhl": "WSH",
+      "keeper": true
+    },
+    {
+      "name": "Cole Caufield",
+      "pos": "LW",
+      "nhl": "MTL",
+      "keeper": true
     },
     {
       "name": "Alex Ovechkin",
@@ -1185,27 +1318,9 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "MacKenzie Weegar",
-      "pos": "D",
-      "nhl": "UTA",
-      "keeper": false
-    },
-    {
       "name": "Nikolaj Ehlers",
       "pos": "LW",
       "nhl": "CAR",
-      "keeper": false
-    },
-    {
-      "name": "Dan Vladar",
-      "pos": "G",
-      "nhl": "PHI",
-      "keeper": false
-    },
-    {
-      "name": "Jacob Trouba",
-      "pos": "D",
-      "nhl": "SJ",
       "keeper": false
     },
     {
@@ -1221,34 +1336,10 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Nazem Kadri",
-      "pos": "C",
-      "nhl": "CAR",
-      "keeper": false
-    },
-    {
       "name": "K'Andre Miller",
       "pos": "D",
       "nhl": "CAR",
       "keeper": false
-    },
-    {
-      "name": "Jonathan Marchessault",
-      "pos": "LW",
-      "nhl": "NSH",
-      "keeper": false
-    },
-    {
-      "name": "Ilya Protas",
-      "pos": "LW",
-      "nhl": "WSH",
-      "keeper": true
-    },
-    {
-      "name": "Brandon Bussi",
-      "pos": "G",
-      "nhl": "CAR",
-      "keeper": true
     },
     {
       "name": "Adam Fox",
@@ -1257,9 +1348,39 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
+      "name": "Thomas Chabot",
+      "pos": "D",
+      "nhl": "OTT",
+      "keeper": false
+    },
+    {
+      "name": "Jacob Trouba",
+      "pos": "D",
+      "nhl": "SJ",
+      "keeper": false
+    },
+    {
+      "name": "Adam Fantilli",
+      "pos": "C",
+      "nhl": "CBJ",
+      "keeper": false
+    },
+    {
       "name": "Nico Hischier",
       "pos": "C",
       "nhl": "NJ",
+      "keeper": true
+    },
+    {
+      "name": "MacKenzie Weegar",
+      "pos": "D",
+      "nhl": "UTA",
+      "keeper": false
+    },
+    {
+      "name": "Clayton Keller",
+      "pos": "LW",
+      "nhl": "UTA",
       "keeper": true
     },
     {
@@ -1269,61 +1390,31 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Clayton Keller",
-      "pos": "LW",
-      "nhl": "UTA",
-      "keeper": true
-    },
-    {
-      "name": "Cole Caufield",
-      "pos": "LW",
-      "nhl": "MTL",
-      "keeper": true
-    },
-    {
       "name": "Aleksander Barkov",
       "pos": "C",
       "nhl": "FLA",
       "keeper": true
     },
     {
-      "name": "Nathan MacKinnon",
-      "pos": "C",
+      "name": "MacKenzie Blackwood",
+      "pos": "G",
       "nhl": "COL",
+      "keeper": false
+    },
+    {
+      "name": "Dan Vladar",
+      "pos": "G",
+      "nhl": "PHI",
+      "keeper": false
+    },
+    {
+      "name": "Brandon Bussi",
+      "pos": "G",
+      "nhl": "CAR",
       "keeper": true
     }
   ],
   "Mark's T...": [
-    {
-      "name": "Matthew Knies",
-      "pos": "LW",
-      "nhl": "TOR",
-      "keeper": false
-    },
-    {
-      "name": "Logan Cooley",
-      "pos": "C",
-      "nhl": "UTA",
-      "keeper": false
-    },
-    {
-      "name": "Anton Frondell",
-      "pos": "C",
-      "nhl": "CHI",
-      "keeper": false
-    },
-    {
-      "name": "Shea Theodore",
-      "pos": "D",
-      "nhl": "VGK",
-      "keeper": false
-    },
-    {
-      "name": "Bo Horvat",
-      "pos": "C",
-      "nhl": "NYI",
-      "keeper": false
-    },
     {
       "name": "Trevor Zegras",
       "pos": "C",
@@ -1331,27 +1422,9 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Yegor Chinakhov",
-      "pos": "LW",
-      "nhl": "PIT",
-      "keeper": false
-    },
-    {
-      "name": "Mats Zuccarello",
-      "pos": "RW",
-      "nhl": "LA",
-      "keeper": false
-    },
-    {
-      "name": "Philip Broberg",
-      "pos": "D",
-      "nhl": "STL",
-      "keeper": false
-    },
-    {
-      "name": "Ivan Demidov",
-      "pos": "RW",
-      "nhl": "MTL",
+      "name": "Macklin Celebrini",
+      "pos": "C",
+      "nhl": "SJ",
       "keeper": true
     },
     {
@@ -1361,15 +1434,33 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Jackson LaCombe",
-      "pos": "D",
-      "nhl": "ANA",
-      "keeper": true
+      "name": "Boone Jenner",
+      "pos": "C",
+      "nhl": "WSH",
+      "keeper": false
+    },
+    {
+      "name": "Jordan Eberle",
+      "pos": "RW",
+      "nhl": "SEA",
+      "keeper": false
     },
     {
       "name": "Tage Thompson",
       "pos": "C",
       "nhl": "BUF",
+      "keeper": true
+    },
+    {
+      "name": "Logan Cooley",
+      "pos": "C",
+      "nhl": "UTA",
+      "keeper": false
+    },
+    {
+      "name": "Brady Tkachuk",
+      "pos": "C",
+      "nhl": "FLA",
       "keeper": true
     },
     {
@@ -1379,9 +1470,75 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Brady Tkachuk",
+      "name": "Philip Broberg",
+      "pos": "D",
+      "nhl": "STL",
+      "keeper": false
+    },
+    {
+      "name": "Shea Theodore",
+      "pos": "D",
+      "nhl": "VGK",
+      "keeper": false
+    },
+    {
+      "name": "Cole Hutson",
+      "pos": "D",
+      "nhl": "WSH",
+      "keeper": true
+    },
+    {
+      "name": "Bo Horvat",
       "pos": "C",
-      "nhl": "FLA",
+      "nhl": "NYI",
+      "keeper": false
+    },
+    {
+      "name": "Nikita Kucherov",
+      "pos": "RW",
+      "nhl": "TB",
+      "keeper": true
+    },
+    {
+      "name": "Matthew Knies",
+      "pos": "LW",
+      "nhl": "CBJ",
+      "keeper": false
+    },
+    {
+      "name": "Jackson LaCombe",
+      "pos": "D",
+      "nhl": "ANA",
+      "keeper": true
+    },
+    {
+      "name": "Anton Frondell",
+      "pos": "C",
+      "nhl": "CHI",
+      "keeper": false
+    },
+    {
+      "name": "Yegor Chinakhov",
+      "pos": "LW",
+      "nhl": "PIT",
+      "keeper": false
+    },
+    {
+      "name": "Ivan Demidov",
+      "pos": "RW",
+      "nhl": "MTL",
+      "keeper": true
+    },
+    {
+      "name": "Taylor Hall",
+      "pos": "LW",
+      "nhl": "CAR",
+      "keeper": false
+    },
+    {
+      "name": "Ilya Sorokin",
+      "pos": "G",
+      "nhl": "NYI",
       "keeper": true
     },
     {
@@ -1391,67 +1548,19 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Ilya Sorokin",
+      "name": "Dylan Garand",
       "pos": "G",
-      "nhl": "NYI",
-      "keeper": true
+      "nhl": "NYR",
+      "keeper": false
     },
     {
       "name": "Igor Shesterkin",
       "pos": "G",
       "nhl": "NYR",
       "keeper": true
-    },
-    {
-      "name": "Cole Hutson",
-      "pos": "D",
-      "nhl": "WSH",
-      "keeper": true
-    },
-    {
-      "name": "Nikita Kucherov",
-      "pos": "RW",
-      "nhl": "TB",
-      "keeper": true
-    },
-    {
-      "name": "Macklin Celebrini",
-      "pos": "C",
-      "nhl": "SJ",
-      "keeper": true
     }
   ],
   "The Dark Seider (You)": [
-    {
-      "name": "Mika Zibanejad",
-      "pos": "C",
-      "nhl": "NYR",
-      "keeper": false
-    },
-    {
-      "name": "Jet Greaves",
-      "pos": "G",
-      "nhl": "CBJ",
-      "keeper": false
-    },
-    {
-      "name": "Linus Ullmark",
-      "pos": "G",
-      "nhl": "OTT",
-      "keeper": false
-    },
-    {
-      "name": "Seth Jarvis",
-      "pos": "LW",
-      "nhl": "CAR",
-      "keeper": false
-    },
-    {
-      "name": "Bowen Byram",
-      "pos": "D",
-      "nhl": "CHI",
-      "keeper": false
-    },
     {
       "name": "Elias Pettersson",
       "pos": "C",
@@ -1459,9 +1568,27 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "JJ Peterka",
+      "name": "Mika Zibanejad",
+      "pos": "C",
+      "nhl": "NYR",
+      "keeper": false
+    },
+    {
+      "name": "Matt Boldy",
       "pos": "LW",
-      "nhl": "BOS",
+      "nhl": "MIN",
+      "keeper": true
+    },
+    {
+      "name": "Jake DeBrusk",
+      "pos": "LW",
+      "nhl": "VAN",
+      "keeper": false
+    },
+    {
+      "name": "Jack Quinn",
+      "pos": "RW",
+      "nhl": "BUF",
       "keeper": false
     },
     {
@@ -1471,22 +1598,22 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": false
     },
     {
-      "name": "Danila Yurov",
-      "pos": "LW",
-      "nhl": "MIN",
-      "keeper": false
-    },
-    {
-      "name": "Alex Laferriere",
-      "pos": "RW",
-      "nhl": "LA",
-      "keeper": false
-    },
-    {
-      "name": "Frank Nazar",
+      "name": "Marco Rossi",
       "pos": "C",
-      "nhl": "CHI",
+      "nhl": "VAN",
       "keeper": false
+    },
+    {
+      "name": "Vasily Podkolzin",
+      "pos": "LW",
+      "nhl": "EDM",
+      "keeper": false
+    },
+    {
+      "name": "Darren Raddysh",
+      "pos": "D",
+      "nhl": "TOR",
+      "keeper": true
     },
     {
       "name": "Moritz Seider",
@@ -1501,22 +1628,28 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Logan Thompson",
-      "pos": "G",
-      "nhl": "WSH",
+      "name": "Owen Power",
+      "pos": "D",
+      "nhl": "BUF",
+      "keeper": false
+    },
+    {
+      "name": "Alex Laferriere",
+      "pos": "C",
+      "nhl": "LA",
+      "keeper": false
+    },
+    {
+      "name": "Mitch Marner",
+      "pos": "C",
+      "nhl": "VGK",
       "keeper": true
     },
     {
-      "name": "Alex Nikishin",
+      "name": "Bowen Byram",
       "pos": "D",
-      "nhl": "CAR",
-      "keeper": true
-    },
-    {
-      "name": "Darren Raddysh",
-      "pos": "D",
-      "nhl": "TOR",
-      "keeper": true
+      "nhl": "CHI",
+      "keeper": false
     },
     {
       "name": "Porter Martone",
@@ -1525,10 +1658,16 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
       "keeper": true
     },
     {
-      "name": "Mitch Marner",
-      "pos": "RW",
-      "nhl": "VGK",
-      "keeper": true
+      "name": "JJ Peterka",
+      "pos": "LW",
+      "nhl": "BOS",
+      "keeper": false
+    },
+    {
+      "name": "Cole Perfetti",
+      "pos": "LW",
+      "nhl": "WPG",
+      "keeper": false
     },
     {
       "name": "Rasmus Dahlin",
@@ -1538,15 +1677,45 @@ export const ROSTERS: Record<string, RosteredPlayer[]> = {
     },
     {
       "name": "Cutter Gauthier",
-      "pos": "LW",
+      "pos": "C",
       "nhl": "ANA",
       "keeper": true
     },
     {
-      "name": "Matt Boldy",
+      "name": "Kevin Fiala",
       "pos": "LW",
-      "nhl": "MIN",
+      "nhl": "LA",
+      "keeper": false
+    },
+    {
+      "name": "Seth Jarvis",
+      "pos": "LW",
+      "nhl": "CAR",
+      "keeper": false
+    },
+    {
+      "name": "Alex Nikishin",
+      "pos": "D",
+      "nhl": "CAR",
       "keeper": true
+    },
+    {
+      "name": "Jet Greaves",
+      "pos": "G",
+      "nhl": "CBJ",
+      "keeper": false
+    },
+    {
+      "name": "Logan Thompson",
+      "pos": "G",
+      "nhl": "WSH",
+      "keeper": true
+    },
+    {
+      "name": "Linus Ullmark",
+      "pos": "G",
+      "nhl": "OTT",
+      "keeper": false
     }
   ]
 };

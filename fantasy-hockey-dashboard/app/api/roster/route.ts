@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAllOverrides, setOverride, clearOverride } from "@/lib/rosterOverrides";
+import { getAllOverrides, setOverride, clearOverride, clearAllOverrides } from "@/lib/rosterOverrides";
 
 export async function GET() {
   try {
@@ -36,6 +36,11 @@ export async function POST(req: NextRequest) {
 // Revert a single player back to the draft-night baseline: ?player=Name
 export async function DELETE(req: NextRequest) {
   try {
+    // ?all=1 clears every add/drop edit at once (used after a baseline re-import).
+    if (req.nextUrl.searchParams.get("all") === "1") {
+      await clearAllOverrides();
+      return NextResponse.json({ overrides: {} });
+    }
     const player = req.nextUrl.searchParams.get("player");
     if (!player) {
       return NextResponse.json({ error: "player is required" }, { status: 400 });
