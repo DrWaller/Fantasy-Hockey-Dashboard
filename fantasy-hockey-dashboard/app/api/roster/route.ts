@@ -18,11 +18,11 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { player, team } = body ?? {};
+    const { player, team, pos } = body ?? {};
     if (!player || typeof player !== "string") {
       return NextResponse.json({ error: "player is required" }, { status: 400 });
     }
-    await setOverride(player, team ?? null);
+    await setOverride(player, team ?? null, typeof pos === "string" ? pos : null);
     const overrides = await getAllOverrides();
     return NextResponse.json({ overrides });
   } catch (err: any) {
@@ -45,7 +45,7 @@ export async function DELETE(req: NextRequest) {
     if (!player) {
       return NextResponse.json({ error: "player is required" }, { status: 400 });
     }
-    await clearOverride(player);
+    await clearOverride(player, req.nextUrl.searchParams.get("pos"));
     const overrides = await getAllOverrides();
     return NextResponse.json({ overrides });
   } catch (err: any) {

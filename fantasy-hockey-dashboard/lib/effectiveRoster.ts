@@ -1,8 +1,8 @@
 import { ROSTERS, YOUR_TEAM, RosteredPlayer } from "./rosters";
-import { normalizeName } from "./rosterLookup";
+import { playerKey } from "./rosterLookup";
 import type { OverrideEntry } from "./rosterOverrides";
 
-export type OwnershipEntry = { team: string | null; displayName: string };
+export type OwnershipEntry = { team: string | null; displayName: string; pos?: string | null };
 export type OwnershipMap = Map<string, OwnershipEntry>;
 
 /**
@@ -22,17 +22,21 @@ export function buildEffectiveOwnership(
   const map: OwnershipMap = new Map();
   for (const [team, players] of Object.entries(baseline)) {
     for (const p of players) {
-      map.set(normalizeName(p.name), { team, displayName: p.name });
+      map.set(playerKey(p.name, p.pos), { team, displayName: p.name, pos: p.pos });
     }
   }
   for (const [key, entry] of Object.entries(overrides)) {
-    map.set(key, { team: entry.team, displayName: entry.playerName });
+    map.set(key, { team: entry.team, displayName: entry.playerName, pos: entry.pos ?? null });
   }
   return map;
 }
 
-export function effectiveOwner(playerName: string, ownership: OwnershipMap): string | null {
-  return ownership.get(normalizeName(playerName))?.team ?? null;
+export function effectiveOwner(
+  playerName: string,
+  ownership: OwnershipMap,
+  pos?: string | null
+): string | null {
+  return ownership.get(playerKey(playerName, pos))?.team ?? null;
 }
 
 export function effectiveRosterForTeam(team: string, ownership: OwnershipMap): string[] {
@@ -41,6 +45,19 @@ export function effectiveRosterForTeam(team: string, ownership: OwnershipMap): s
     if (entry.team === team) names.push(entry.displayName);
   });
   return names;
+}
+
+/** Same as effectiveRosterForTeam but keeps each player's position, which is
+ * what tells the two Elias Petterssons (C / D) apart. */
+export function effectiveRosterEntriesForTeam(
+  team: string,
+  ownership: OwnershipMap
+): { name: string; pos: string | null }[] {
+  const out: { name: string; pos: string | null }[] = [];
+  ownership.forEach((entry) => {
+    if (entry.team === team) out.push({ name: entry.displayName, pos: entry.pos ?? null });
+  });
+  return out;
 }
 
 export { YOUR_TEAM };

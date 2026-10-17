@@ -1,6 +1,6 @@
 import { SKATER_CATEGORIES, GOALIE_CATEGORIES } from "./leagueConfig";
-import { allTeamNames, normalizeName } from "./rosterLookup";
-import { effectiveRosterForTeam, OwnershipMap } from "./effectiveRoster";
+import { allTeamNames, playerKey } from "./rosterLookup";
+import { effectiveRosterEntriesForTeam, OwnershipMap } from "./effectiveRoster";
 
 type RawSkater = Record<string, any>;
 type RawGoalie = Record<string, any>;
@@ -23,19 +23,18 @@ export function computeTeamCategoryTotals(
   rawGoalies: RawGoalie[],
   ownership: OwnershipMap
 ): TeamCategoryTotals[] {
-  const skatersByName = new Map(rawSkaters.map((s) => [normalizeName(s.name), s]));
-  const goaliesByName = new Map(rawGoalies.map((g) => [normalizeName(g.name), g]));
+  const skatersByName = new Map(rawSkaters.map((s) => [playerKey(s.name, s.position), s]));
+  const goaliesByName = new Map(rawGoalies.map((g) => [playerKey(g.name, "G"), g]));
 
   return allTeamNames().map((team) => {
-    const rosterNames = effectiveRosterForTeam(team, ownership);
+    const rosterNames = effectiveRosterEntriesForTeam(team, ownership);
     const teamSkaters: RawSkater[] = [];
     const teamGoalies: RawGoalie[] = [];
 
-    rosterNames.forEach((name) => {
-      const key = normalizeName(name);
-      const s = skatersByName.get(key);
+    rosterNames.forEach(({ name, pos }) => {
+      const s = skatersByName.get(playerKey(name, pos));
       if (s) teamSkaters.push(s);
-      const g = goaliesByName.get(key);
+      const g = goaliesByName.get(playerKey(name, "G"));
       if (g) teamGoalies.push(g);
     });
 

@@ -33,7 +33,8 @@ import {
 import { lookupRole, type RolesPayload } from "@/lib/roles";
 import type { InjuriesPayload } from "@/lib/injuries";
 import { previousSeasonId } from "@/lib/nhlApi";
-import { allTeamNames, normalizeName } from "@/lib/rosterLookup";
+import { allTeamNames, playerKey } from "@/lib/rosterLookup";
+import { lookupInjury } from "@/lib/injuries";
 import { buildEffectiveOwnership, effectiveOwner, YOUR_TEAM } from "@/lib/effectiveRoster";
 
 type RawSkater = {
@@ -176,19 +177,19 @@ export default function Dashboard() {
     [rosterOverrides, rosterBaseline]
   );
 
-  async function handleOwnerChange(playerName: string, team: string | null) {
+  async function handleOwnerChange(playerName: string, team: string | null, pos?: string | null) {
     setRosterSaveError(null);
-    const key = normalizeName(playerName);
+    const key = playerKey(playerName, pos);
     // Optimistic update so the dropdown feels instant.
     setRosterOverrides((prev) => ({
       ...prev,
-      [key]: { playerName, team, updatedAt: new Date().toISOString() },
+      [key]: { playerName, team, pos: pos ?? null, updatedAt: new Date().toISOString() },
     }));
     try {
       const res = await fetch("/api/roster", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ player: playerName, team }),
+        body: JSON.stringify({ player: playerName, team, pos: pos ?? null }),
       });
       const json = await res.json();
       if (json.error) throw new Error(json.error);
@@ -378,7 +379,7 @@ export default function Dashboard() {
     return scored
       .map((p) => {
         const adj = overrides[(p as any).playerId] ?? 0;
-        const owner = effectiveOwner((p as any).name, ownership);
+        const owner = effectiveOwner((p as any).name, ownership, (p as any).position);
         return {
           ...p,
           owner,
@@ -403,7 +404,7 @@ export default function Dashboard() {
     return scored
       .map((g) => {
         const adj = overrides[(g as any).playerId] ?? 0;
-        const owner = effectiveOwner((g as any).name, ownership);
+        const owner = effectiveOwner((g as any).name, ownership, "G");
         return {
           ...g,
           owner,
@@ -502,8 +503,8 @@ export default function Dashboard() {
         tri,
         tier: tiers.get(r.playerId) ?? "Replacement",
         lyTier: lyScored?.tiers.get(r.playerId) ?? null,
-        role: kind === "skaters" ? lookupRole(rolesData?.roles, tri, r.name) : null,
-        injury: injuriesData?.injuries?.[normalizeName(r.name)] ?? null,
+        role: kind === "skaters" ? lookupRole(rolesData?.roles, tri, r.name, r.position) : null,
+        injury: lookupInjury(injuriesData?.injuries, r.name, kind === "goalies" ? "G" : r.position),
         games7: scheduleByTri.get(tri)?.games ?? null,
       };
     });
@@ -1044,7 +1045,9 @@ export default function Dashboard() {
                   <td className="px-2 py-1.5">
                     <select
                       value={r.owner ?? ""}
-                      onChange={(e) => handleOwnerChange(r.name, e.target.value || null)}
+                      onChange={(e) =>
+                        handleOwnerChange(r.name, e.target.value || null, tab === "goalies" ? "G" : r.position)
+                      }
                       className={`w-full rounded border border-rink-steel/40 bg-rink-board px-1 py-0.5 text-xs ${
                         r.owner === YOUR_TEAM
                           ? "font-semibold text-rink-line"

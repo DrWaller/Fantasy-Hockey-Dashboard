@@ -135,14 +135,14 @@ function build(
   axes: RadarAxis[],
   isGoalie: boolean,
   opts: RadarOptions,
-  ownerOf: (name: string) => string | null,
+  ownerOf: (name: string, pos: string) => string | null,
   minShots: number
 ): { entries: RadarEntry[]; poolSize: number } {
   const qualified = rows.filter((r) => (Number(r.gamesPlayed) || 0) >= opts.minGP);
 
   const withOwner = qualified.map((r) => ({
     row: r,
-    owner: ownerOf(String(r.name)),
+    owner: ownerOf(String(r.name), isGoalie ? "G" : String(r.position ?? "")),
     group: isGoalie ? "G" : r.position === "D" ? "D" : "F",
   }));
 
@@ -212,7 +212,7 @@ export function computeRadar(
   rawSkaters: any[],
   rawGoalies: any[],
   opts: RadarOptions,
-  ownerOf: (name: string) => string | null
+  ownerOf: (name: string, pos: string) => string | null
 ): RadarResult {
   const qualifiedSk = rawSkaters.filter((r) => (Number(r.gamesPlayed) || 0) >= opts.minGP);
   const medianGP = median(qualifiedSk.map((r) => Number(r.gamesPlayed) || 0));

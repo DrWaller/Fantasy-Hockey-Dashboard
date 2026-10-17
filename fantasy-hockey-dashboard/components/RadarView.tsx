@@ -173,7 +173,7 @@ export default function RadarView({
         rawSkaters,
         rawGoalies,
         { minGP, basis, scope, groupBasis },
-        (name) => effectiveOwner(name, ownership)
+        (name, pos) => effectiveOwner(name, ownership, pos)
       ),
     [rawSkaters, rawGoalies, minGP, basis, scope, groupBasis, ownership]
   );

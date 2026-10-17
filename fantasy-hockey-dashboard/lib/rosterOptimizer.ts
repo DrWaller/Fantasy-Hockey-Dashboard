@@ -1,7 +1,7 @@
 import { LEAGUE_CONFIG } from "./leagueConfig";
 import { toTricode } from "./nhlSchedule";
-import { normalizeName } from "./rosterLookup";
-import { effectiveRosterForTeam, effectiveOwner, OwnershipMap, YOUR_TEAM } from "./effectiveRoster";
+import { playerKey } from "./rosterLookup";
+import { effectiveRosterEntriesForTeam, effectiveOwner, OwnershipMap, YOUR_TEAM } from "./effectiveRoster";
 import { scoreSkaters, scoreGoalies } from "./scoring";
 
 export type GameGridDay = { date: string; label: string };
@@ -34,19 +34,18 @@ export function buildRosterPlayersForTeam(
   rawGoalies: any[],
   ownership: OwnershipMap
 ): RosterPlayer[] {
-  const names = effectiveRosterForTeam(team, ownership);
-  const skatersByName = new Map(rawSkaters.map((s) => [normalizeName(s.name), s]));
-  const goaliesByName = new Map(rawGoalies.map((g) => [normalizeName(g.name), g]));
+  const names = effectiveRosterEntriesForTeam(team, ownership);
+  const skatersByName = new Map(rawSkaters.map((s) => [playerKey(s.name, s.position), s]));
+  const goaliesByName = new Map(rawGoalies.map((g) => [playerKey(g.name, "G"), g]));
 
   const players: RosterPlayer[] = [];
-  names.forEach((name) => {
-    const key = normalizeName(name);
-    const s = skatersByName.get(key);
+  names.forEach(({ name, pos }) => {
+    const s = skatersByName.get(playerKey(name, pos));
     if (s) {
       players.push({ name, position: mapPosition(s.position), nhlTricode: toTricode(s.team) });
       return;
     }
-    const g = goaliesByName.get(key);
+    const g = goaliesByName.get(playerKey(name, "G"));
     if (g) {
       players.push({ name, position: "G", nhlTricode: toTricode(g.team) });
     }
@@ -185,7 +184,7 @@ export function findStreamSuggestions(
     const scored = scoreGoalies(rawGoalies);
     return scored
       .filter((g: any) => {
-        const owner = effectiveOwner(g.name, ownership);
+        const owner = effectiveOwner(g.name, ownership, "G");
         if (owner !== null) return false;
         return teamPlaysOn(grid, toTricode(g.team), date);
       })
@@ -208,7 +207,7 @@ export function findStreamSuggestions(
     .filter((s: any) => {
       const pos = mapPosition(s.position);
       if (!wanted.includes(pos)) return false;
-      const owner = effectiveOwner(s.name, ownership);
+      const owner = effectiveOwner(s.name, ownership, s.position);
       if (owner !== null) return false;
       return teamPlaysOn(grid, toTricode(s.team), date);
     })

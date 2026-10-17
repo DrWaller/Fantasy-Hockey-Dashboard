@@ -1,7 +1,7 @@
 import { SKATER_CATEGORIES, GOALIE_CATEGORIES } from "./leagueConfig";
 import { buildRosterPlayersForTeam, computeDailyLineups } from "./rosterOptimizer";
 import type { GameGrid } from "./rosterOptimizer";
-import { normalizeName } from "./rosterLookup";
+import { playerKey } from "./rosterLookup";
 import type { OwnershipMap } from "./effectiveRoster";
 
 export type CategoryConfidence = "high" | "medium" | "low";
@@ -58,8 +58,8 @@ export function projectTeamWeek(
   const rosterPlayers = buildRosterPlayersForTeam(team, rawSkaters, rawGoalies, ownership);
   const lineups = computeDailyLineups(rosterPlayers, grid);
 
-  const skatersByName = new Map(rawSkaters.map((s) => [normalizeName(s.name), s]));
-  const goaliesByName = new Map(rawGoalies.map((g) => [normalizeName(g.name), g]));
+  const skatersByName = new Map(rawSkaters.map((s) => [playerKey(s.name, s.position), s]));
+  const goaliesByName = new Map(rawGoalies.map((g) => [playerKey(g.name, "G"), g]));
 
   const acc: Record<string, number> = {};
   SKATER_CATEGORIES.forEach((c) => {
@@ -78,7 +78,7 @@ export function projectTeamWeek(
   lineups.forEach((day) => {
     day.started.forEach((p) => {
       if (p.position === "G") {
-        const g = goaliesByName.get(normalizeName(p.name));
+        const g = goaliesByName.get(playerKey(p.name, "G"));
         if (!g) return;
         const gp = Number(g.gamesPlayed) || 0;
         if (gp === 0) return;
@@ -90,7 +90,7 @@ export function projectTeamWeek(
         acc.shutouts += (Number(g.shutouts) || 0) / gp;
         goalieStartsUsed += 1;
       } else {
-        const s = skatersByName.get(normalizeName(p.name));
+        const s = skatersByName.get(playerKey(p.name, p.position));
         if (!s) return;
         const gp = Number(s.gamesPlayed) || 0;
         if (gp === 0) return;

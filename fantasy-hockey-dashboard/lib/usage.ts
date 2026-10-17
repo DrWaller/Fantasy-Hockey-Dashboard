@@ -41,9 +41,9 @@ export function inferRoles(
   recent: (TOIRow & { id?: number })[]
 ): Map<string, Role> {
   const out = new Map<string, Role>();
-  const recentBy = new Map(recent.map((r) => [roleKey(r.team, r.name), r] as const));
+  const recentBy = new Map(recent.map((r) => [roleKey(r.team, r.name, r.pos), r] as const));
   const use = (r: TOIRow) => {
-    const rr = recentBy.get(roleKey(r.team, r.name));
+    const rr = recentBy.get(roleKey(r.team, r.name, r.pos));
     return rr && rr.gp >= 2 ? rr : r;
   };
   const teamPP = (rows: TOIRow[]) => {
@@ -77,7 +77,7 @@ export function inferRoles(
     });
 
     for (const r of rows) {
-      out.set(roleKey(r.team, r.name), {
+      out.set(roleKey(r.team, r.name, r.pos), {
         line: lineOf.get(r) ?? null,
         pp: ppOf.get(r) ?? null,
         src: "inferred",
@@ -93,7 +93,7 @@ export function inferRoles(
 export function mergeRoles(
   inferred: Map<string, Role>,
   toi: TOIRow[],
-  lines: { players: { name: string; team: string; line: string | null; pp: "PP1" | "PP2" | null }[]; teamsOk: string[] }
+  lines: { players: { name: string; team: string; line: string | null; pp: "PP1" | "PP2" | null; pos?: "D" | "F" | null }[]; teamsOk: string[] }
 ): Record<string, Role> {
   const result: Record<string, Role> = {};
   const ok = new Set(lines.teamsOk);
@@ -103,16 +103,16 @@ export function mergeRoles(
 
   // Every skater on a read team starts as "not in the lineup"...
   for (const r of toi) {
-    if (ok.has(r.team)) result[roleKey(r.team, r.name)] = { line: null, pp: null, src: "lines" };
+    if (ok.has(r.team)) result[roleKey(r.team, r.name, r.pos)] = { line: null, pp: null, src: "lines" };
   }
   // ...then the Daily Faceoff entries fill in who actually is.
   const toiByInitial = new Map<string, string>();
-  for (const r of toi) toiByInitial.set(initialKey(r.team, r.name), roleKey(r.team, r.name));
+  for (const r of toi) toiByInitial.set(initialKey(r.team, r.name, r.pos), roleKey(r.team, r.name, r.pos));
   for (const p of lines.players) {
     const role: Role = { line: p.line, pp: p.pp, src: "lines" };
-    const full = roleKey(p.team, p.name);
+    const full = roleKey(p.team, p.name, p.pos);
     result[full] = role;
-    const viaInitial = toiByInitial.get(initialKey(p.team, p.name));
+    const viaInitial = toiByInitial.get(initialKey(p.team, p.name, p.pos));
     if (viaInitial && viaInitial !== full) result[viaInitial] = role;
   }
   return result;

@@ -6,7 +6,7 @@
 // pp1, pp2, pk1, pk2) and reads it. If Daily Faceoff changes the page, a team
 // simply comes back empty and the roles route falls back to lines inferred
 // from ice time (lib/usage.ts).
-import { normalizeName } from "./rosterLookup";
+import { normalizeName, AMBIGUOUS_NAMES } from "./rosterLookup";
 
 // NHL tri-code -> Daily Faceoff team slug.
 const SLUGS: Record<string, string> = {
@@ -25,6 +25,7 @@ export interface LinePlayer {
   team: string; // NHL tri-code
   line: string | null;
   pp: "PP1" | "PP2" | null;
+  pos: "D" | "F" | null; // only worked out for names two NHL players share
 }
 
 // From an index inside an array, find the whole array's text.
@@ -93,8 +94,18 @@ export function toLinePlayers(raw: any[], team: string): LinePlayer[] {
     const name = String(p?.name ?? p?.playerName ?? "").trim();
     const group = String(p?.groupIdentifier ?? "").toLowerCase();
     if (!name || !group) continue;
-    const key = normalizeName(name);
-    const cur = by.get(key) ?? { name, team, line: null, pp: null };
+    // Two NHL players can share a name (the Elias Petterssons, C and D, both on
+    // Vancouver). Keep them apart by position; if the page doesn't say which
+    // one a power-play entry is, drop it rather than guess.
+    let pos: "D" | "F" | null = null;
+    const nn = normalizeName(name);
+    if (AMBIGUOUS_NAMES.has(nn)) {
+      const posRaw = String(p?.positionIdentifier ?? p?.position ?? p?.pos ?? "").toLowerCase();
+      pos = /^(ld|rd|d)/.test(posRaw) ? "D" : posRaw ? "F" : /^d[1-3]$/.test(group) ? "D" : /^f[1-4]$/.test(group) ? "F" : null;
+      if (!pos) continue;
+    }
+    const key = pos ? `${nn}|${pos}` : nn;
+    const cur = by.get(key) ?? { name, team, line: null, pp: null, pos };
     let m: RegExpMatchArray | null;
     if ((m = group.match(/^f([1-4])$/))) cur.line = `L${m[1]}`;
     else if ((m = group.match(/^d([1-3])$/))) cur.line = `D${m[1]}`;

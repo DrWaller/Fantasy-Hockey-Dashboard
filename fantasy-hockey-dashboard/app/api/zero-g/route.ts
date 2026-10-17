@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     const overrides = await getAllOverrides();
     const ownership = buildEffectiveOwnership(overrides);
     const belowReplacement = scored.filter(
-      (g) => g.overallScore < replacementScore && effectiveOwner((g as any).name, ownership) === null
+      (g) => g.overallScore < replacementScore && effectiveOwner((g as any).name, ownership, "G") === null
     );
 
     const startLogs = await getLeagueGoalieStartLogs(season, gamesPerTeam);

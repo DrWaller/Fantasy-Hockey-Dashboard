@@ -7,12 +7,12 @@
 // just called up) is rated on last season alone; with no data in either
 // season he is Unrated.
 import { scoreSkaters, scoreGoalies } from "./scoring";
-import { normalizeName } from "./rosterLookup";
-import { effectiveRosterForTeam, type OwnershipMap } from "./effectiveRoster";
+import { playerKey } from "./rosterLookup";
+import { effectiveRosterEntriesForTeam, effectiveOwner, type OwnershipMap } from "./effectiveRoster";
 import { LEAGUE_CONFIG } from "./leagueConfig";
 import { ROSTERS } from "./rosters";
 import { latestTeam, tierForRank, starterCount, isGoodPlus, type TierName } from "./tableFilters";
-import type { InjuryInfo } from "./injuries";
+import { lookupInjury, type InjuryInfo } from "./injuries";
 
 export type Group = "F" | "D" | "G";
 export type Slot = "Lineup" | "Bench" | "IR" | "Reserve";
@@ -123,7 +123,7 @@ function buildKind(
     return tierForRank(rank, starters);
   };
 
-  return { byName: new Map(raw.map((p) => [normalizeName(p.name), p])), curPct, lyPct, lyTier, poolScoresDesc, blend, tierOfScore };
+  return { byName: new Map(raw.map((p) => [playerKey(p.name, kind === "goalies" ? "G" : p.position), p])), curPct, lyPct, lyTier, poolScoresDesc, blend, tierOfScore };
 }
 
 // ---- lineup fit -------------------------------------------------------------
@@ -194,9 +194,6 @@ export function buildMakeup(args: {
   const go = buildKind("goalies", rawGoalies, args.lyGoalies, weights, lyWeight);
   const teamNames = args.teamNames ?? Object.keys(ROSTERS);
 
-  const rosterPos = new Map<string, string>();
-  for (const list of Object.values(ROSTERS)) for (const p of list) if (p.pos) rosterPos.set(normalizeName(p.name), p.pos);
-
   const posOf = (code: string | undefined, fallback: string | undefined): { pos: string; group: Group } => {
     const c = (code ?? fallback ?? "").toUpperCase();
     if (c.startsWith("G")) return { pos: "G", group: "G" };
@@ -207,11 +204,11 @@ export function buildMakeup(args: {
   };
 
   // Free agents ranked best-first per group, for the "Available" upgrade.
-  const owned = (n: string) => ownership.get(normalizeName(n))?.team != null;
+  const owned = (n: string, pos: string) => effectiveOwner(n, ownership, pos) != null;
   const faPool: Record<Group, { name: string; team: string; score: number; tier: TierName }[]> = { F: [], D: [], G: [] };
   for (const [kind, model, raw] of [["skaters", sk, rawSkaters], ["goalies", go, rawGoalies]] as const) {
     for (const p of raw) {
-      if (!model.curPct.has(p.playerId) || owned(p.name)) continue;
+      if (!model.curPct.has(p.playerId) || owned(p.name, kind === "goalies" ? "G" : p.position)) continue;
       const b = model.blend(p.playerId);
       if (b.score == null) continue;
       const g: Group = kind === "goalies" ? "G" : p.position === "D" ? "D" : "F";
@@ -222,12 +219,11 @@ export function buildMakeup(args: {
 
   const teams = teamNames.map((team) => {
     const players: MakeupPlayer[] = [];
-    for (const name of effectiveRosterForTeam(team, ownership)) {
-      const key = normalizeName(name);
-      const gRec = go.byName.get(key);
-      const sRec = gRec ? undefined : sk.byName.get(key);
+    for (const { name, pos: rosterPos } of effectiveRosterEntriesForTeam(team, ownership)) {
+      const gRec = go.byName.get(playerKey(name, "G"));
+      const sRec = gRec ? undefined : sk.byName.get(playerKey(name, rosterPos));
       const rec = gRec ?? sRec;
-      const { pos, group } = posOf(gRec ? "G" : sRec?.position, rosterPos.get(key));
+      const { pos, group } = posOf(gRec ? "G" : sRec?.position, rosterPos ?? undefined);
       const model = group === "G" ? go : sk;
       const id: number | null = rec?.playerId ?? null;
       const b = id != null ? model.blend(id) : { score: null, basis: null as MakeupPlayer["basis"] };
@@ -240,7 +236,7 @@ export function buildMakeup(args: {
         group,
         nhl: rec ? latestTeam(rec.team) : "",
         slot: "Reserve",
-        injury: injuries?.[key] ?? null,
+        injury: lookupInjury(injuries, name, rec ? (gRec ? "G" : sRec?.position) : rosterPos),
         gp: rec ? Number(rec.gamesPlayed) || 0 : 0,
         tier,
         lyTier,
